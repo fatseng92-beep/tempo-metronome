@@ -3764,55 +3764,90 @@ class Component extends DCLogic {
   guitarBus() {
     if (this._gBus) return this._gBus;
     const c = this.ctx, g = c.createGain(), comp = c.createDynamicsCompressor();
-    g.gain.value = 0.9;
-    comp.threshold.value = -16; comp.knee.value = 10; comp.ratio.value = 3.2; comp.attack.value = 0.004; comp.release.value = 0.18;
+    g.gain.value = 0.85;
+    comp.threshold.value = -14; comp.knee.value = 18; comp.ratio.value = 2; comp.attack.value = 0.012; comp.release.value = 0.25;
     g.connect(comp).connect(c.destination);
     this._gBus = g;
     return g;
   }
-  noiseHit(time, vel, bus) {
-    const c = this.ctx, src = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain();
-    src.buffer = this.noiseBuf(); fl.type = 'bandpass'; fl.frequency.setValueAtTime(1100, time); fl.Q.value = 0.8;
-    g.gain.setValueAtTime(0.0001, time);
-    g.gain.exponentialRampToValueAtTime(Math.max(0.0001, vel), time + 0.002);
-    g.gain.exponentialRampToValueAtTime(0.0001, time + 0.04);
-    src.connect(fl).connect(g).connect(bus); src.start(time); src.stop(time + 0.05);
+  guitarBody() {
+    if (this._body) return this._body;
+    const c = this.ctx, inn = c.createGain();
+    const air = c.createBiquadFilter(), wood = c.createBiquadFilter(), box = c.createBiquadFilter(), shelf = c.createBiquadFilter();
+    air.type = 'peaking'; air.frequency.value = 102; air.Q.value = 0.9; air.gain.value = 6;
+    wood.type = 'peaking'; wood.frequency.value = 205; wood.Q.value = 1.2; wood.gain.value = 4;
+    box.type = 'peaking'; box.frequency.value = 410; box.Q.value = 0.8; box.gain.value = 2;
+    shelf.type = 'highshelf'; shelf.frequency.value = 3200; shelf.gain.value = -4;
+    inn.connect(air).connect(wood).connect(box).connect(shelf).connect(this.guitarBus());
+    this._body = inn;
+    return inn;
+  }
+  guitarWave() {
+    if (this._gWave) return this._gWave;
+    const n = 10, real = new Float32Array(n), imag = new Float32Array(n);
+    const mags = [0, 1, 0.42, 0.18, 0.08, 0.035, 0.015, 0.006, 0.002, 0.0008];
+    for (let i = 1; i < n; i++) imag[i] = mags[i];
+    this._gWave = this.ctx.createPeriodicWave(real, imag);
+    return this._gWave;
+  }
+  pickNoise(time, vel, dest) {
+    const c = this.ctx, src = c.createBufferSource(), hp = c.createBiquadFilter(), lp = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = this.noiseBuf();
+    hp.type = 'highpass'; hp.frequency.value = 2200; hp.Q.value = 0.5;
+    lp.type = 'lowpass'; lp.frequency.value = 7000;
+    g.gain.setValueAtTime(Math.max(0.0001, vel), time);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + 0.016);
+    src.connect(hp).connect(lp).connect(g).connect(dest);
+    src.start(time); src.stop(time + 0.022);
+    const ms = Math.max(0, (time - c.currentTime) * 1000) + 80;
+    setTimeout(() => { try { src.disconnect(); hp.disconnect(); lp.disconnect(); g.disconnect(); } catch (e) {} }, ms);
   }
   chuck(time, vel, dir) {
-    const bus = this.guitarBus(), n = dir === 'U' ? 3 : 4;
-    for (let i = 0; i < n; i++) this.noiseHit(time + i * 0.007, vel * (1 - i * 0.18), bus);
-    if (dir !== 'U') {
-      const c = this.ctx, o = c.createOscillator(), g = c.createGain();
-      o.type = 'triangle'; o.frequency.setValueAtTime(150, time); o.frequency.exponentialRampToValueAtTime(55, time + 0.08);
-      g.gain.setValueAtTime(0.0001, time); g.gain.exponentialRampToValueAtTime(vel * 0.5, time + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, time + 0.09);
-      o.connect(g).connect(bus); o.start(time); o.stop(time + 0.1);
-    }
+    const dest = this.guitarBody(), n = dir === 'U' ? 4 : 5;
+    for (let i = 0; i < n; i++) this.pickNoise(time + i * 0.011, vel * (0.42 - i * 0.06), dest);
+    const c = this.ctx, o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(92, time);
+    g.gain.setValueAtTime(0.0001, time);
+    g.gain.exponentialRampToValueAtTime(vel * 0.16, time + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + 0.055);
+    o.connect(g).connect(dest); o.start(time); o.stop(time + 0.07);
   }
-  pluck(time, freq, vel, bus) {
-    const c = this.ctx, sr = c.sampleRate, period = 1 / freq;
-    const burstN = Math.max(8, Math.round(sr * Math.min(period, 0.05)));
-    const buf = c.createBuffer(1, burstN, sr), d = buf.getChannelData(0);
-    for (let i = 0; i < burstN; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / burstN);
-    const src = c.createBufferSource(); src.buffer = buf;
-    const delay = c.createDelay(0.08); delay.delayTime.setValueAtTime(Math.min(0.08, period), time);
-    const lpf = c.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.setValueAtTime(Math.min(4800, freq * 7 + 700), time); lpf.Q.value = 0.4;
-    const fb = c.createGain(); fb.gain.setValueAtTime(Math.min(0.982, 0.93 + Math.min(freq, 600) / 600 * 0.045), time);
-    src.connect(delay); delay.connect(lpf); lpf.connect(fb); fb.connect(delay);
-    const g = c.createGain(); g.gain.setValueAtTime(Math.max(0.0001, vel), time); g.gain.exponentialRampToValueAtTime(0.0001, time + 1.35);
-    delay.connect(g); g.connect(bus);
-    src.start(time); src.stop(time + period + 0.03);
-    const ms = Math.max(0, (time - c.currentTime) * 1000) + 1500;
-    setTimeout(() => { try { src.disconnect(); delay.disconnect(); lpf.disconnect(); fb.disconnect(); g.disconnect(); } catch (e) {} }, ms);
+  pluck(time, freq, vel) {
+    const c = this.ctx, dest = this.guitarBody();
+    const dur = Math.min(2.4, Math.max(0.85, 140 / Math.sqrt(freq)));
+    const lp = c.createBiquadFilter(), g = c.createGain();
+    lp.type = 'lowpass'; lp.Q.value = 0.55;
+    lp.frequency.setValueAtTime(Math.min(4800, freq * 5 + 700), time);
+    lp.frequency.exponentialRampToValueAtTime(Math.max(320, freq * 1.7), time + 0.32);
+    const peak = Math.max(0.0001, vel);
+    g.gain.setValueAtTime(0.0001, time);
+    g.gain.exponentialRampToValueAtTime(peak, time + 0.005);
+    g.gain.exponentialRampToValueAtTime(peak * 0.55, time + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+    const wave = this.guitarWave(), nodes = [];
+    [1, 1.0016].forEach((bend, k) => {
+      const o = c.createOscillator(), gg = c.createGain();
+      o.setPeriodicWave(wave);
+      o.frequency.setValueAtTime(freq * bend * 1.003, time);
+      o.frequency.exponentialRampToValueAtTime(freq * bend, time + 0.04);
+      gg.gain.value = k ? 0.5 : 1;
+      o.connect(gg).connect(lp);
+      o.start(time); o.stop(time + dur + 0.02);
+      nodes.push(o, gg);
+    });
+    lp.connect(g).connect(dest);
+    this.pickNoise(time, peak * 0.16, dest);
+    const ms = Math.max(0, (time - c.currentTime) * 1000) + (dur + 0.15) * 1000;
+    setTimeout(() => { try { lp.disconnect(); g.disconnect(); nodes.forEach(n => n.disconnect()); } catch (e) {} }, ms);
   }
   strumGuitar(time, chord, dir) {
     const midis = chordMidis(this.soundingChord(chord));
-    const bus = this.guitarBus();
-    if (!midis || !midis.length) { this.chuck(time, dir === 'U' ? 0.2 : 0.32, dir); return; }
+    if (!midis || !midis.length) { this.chuck(time, dir === 'U' ? 0.32 : 0.46, dir); return; }
     const up = dir === 'U', seq = up ? midis.slice().reverse() : midis.slice();
-    this.noiseHit(time, up ? 0.08 : 0.12, bus);
+    const gap = up ? 0.013 : 0.018;
     seq.forEach((midi, i) => {
-      const vel = Math.max(0.035, (up ? 0.1 : 0.14) * (1 - i * 0.08));
-      this.pluck(time + i * (up ? 0.009 : 0.012), 440 * Math.pow(2, (midi - 69) / 12), vel, bus);
+      const vel = Math.max(0.05, (up ? 0.13 : 0.16) * (1 - i * 0.05));
+      this.pluck(time + i * gap + Math.random() * 0.002, 440 * Math.pow(2, (midi - 69) / 12), vel);
     });
   }
   moveSec(i, d) {
