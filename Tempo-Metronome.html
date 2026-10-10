@@ -3765,67 +3765,54 @@ class Component extends DCLogic {
   guitarOut() {
     if (this._gOut) return this._gOut;
     const c = this.ctx, g = c.createGain();
-    g.gain.value = 0.75;
+    g.gain.value = 0.7;
     g.connect(c.destination);
     this._gOut = g;
     return g;
   }
-  guitarBody() {
-    if (this._gBody) return this._gBody;
-    const c = this.ctx, inn = c.createGain();
-    const air = c.createBiquadFilter(), wood = c.createBiquadFilter(), box = c.createBiquadFilter(), lp = c.createBiquadFilter();
-    air.type = 'peaking'; air.frequency.value = 98; air.Q.value = 0.6; air.gain.value = 5;
-    wood.type = 'peaking'; wood.frequency.value = 210; wood.Q.value = 0.7; wood.gain.value = 3;
-    box.type = 'peaking'; box.frequency.value = 420; box.Q.value = 0.5; box.gain.value = 1.5;
-    lp.type = 'lowpass'; lp.frequency.value = 4200; lp.Q.value = 0.3;
-    inn.connect(air).connect(wood).connect(box).connect(lp).connect(this.guitarOut());
-    this._gBody = inn;
-    return inn;
+  guitarSample() {
+    if (this._gSamp) return this._gSamp;
+    const c = this.ctx, sr = c.sampleRate, dur = 1.1, n = Math.floor(sr * dur);
+    const buf = c.createBuffer(1, n, sr), d = buf.getChannelData(0);
+    const f0 = 196, parts = [[1, 1, 1.45], [2, 0.38, 3.6], [3, 0.14, 7], [4, 0.05, 12]];
+    let pk = 0.0001;
+    for (let i = 0; i < n; i++) {
+      const t = i / sr;
+      const atk = t < 0.007 ? t / 0.007 : 1;
+      const tail = t > dur - 0.18 ? Math.max(0, (dur - t) / 0.18) : 1;
+      let s = 0;
+      for (let p = 0; p < parts.length; p++) s += Math.sin(2 * Math.PI * f0 * parts[p][0] * t) * parts[p][1] * Math.exp(-parts[p][2] * t);
+      d[i] = s * atk * tail;
+      if (Math.abs(d[i]) > pk) pk = Math.abs(d[i]);
+    }
+    const scale = 0.8 / pk;
+    for (let i = 0; i < n; i++) d[i] *= scale;
+    this._gSamp = buf;
+    return buf;
   }
   pluck(time, freq, vel, muted) {
-    const c = this.ctx, sr = c.sampleRate, period = 1 / freq;
-    const n = Math.max(24, Math.round(sr * Math.min(period * (muted ? 1.2 : 2), 0.03)));
-    const buf = c.createBuffer(1, n, sr), data = buf.getChannelData(0);
-    let prev = 0;
-    for (let i = 0; i < n; i++) {
-      const env = Math.pow(1 - i / n, 1.5);
-      prev = prev * 0.74 + (Math.random() * 2 - 1) * env * 0.26;
-      data[i] = prev;
-    }
-    let pk = 0.0001;
-    for (let i = 0; i < n; i++) pk = Math.max(pk, Math.abs(data[i]));
-    const norm = 0.65 / pk;
-    for (let i = 0; i < n; i++) data[i] *= norm;
-    const src = c.createBufferSource(); src.buffer = buf;
-    const delay = c.createDelay(0.05);
-    delay.delayTime.setValueAtTime(Math.min(0.05, period), time);
-    const lpf = c.createBiquadFilter();
-    lpf.type = 'lowpass'; lpf.Q.value = 0.35;
-    lpf.frequency.setValueAtTime(muted ? Math.min(800, freq * 2.5) : Math.min(2000, freq * 3.2 + 280), time);
-    lpf.frequency.exponentialRampToValueAtTime(muted ? Math.max(160, freq * 0.8) : Math.max(360, freq * 1.25), time + (muted ? 0.025 : 0.1));
-    const fb = c.createGain();
-    fb.gain.setValueAtTime(muted ? 0.8 : (freq < 150 ? 0.965 : freq < 280 ? 0.95 : 0.935), time);
-    src.connect(lpf); lpf.connect(delay); delay.connect(fb); fb.connect(lpf);
-    const g = c.createGain();
-    const peak = Math.max(0.0001, vel), dur = muted ? 0.08 : (freq < 150 ? 1.35 : 0.95);
+    const c = this.ctx, src = c.createBufferSource(), g = c.createGain();
+    src.buffer = this.guitarSample();
+    src.playbackRate.setValueAtTime(Math.max(0.35, Math.min(3.2, freq / 196)), time);
+    const peak = Math.max(0.0001, vel), dur = muted ? 0.065 : 1.02;
     g.gain.setValueAtTime(peak, time);
-    g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
-    delay.connect(g).connect(this.guitarBody());
-    src.start(time); src.stop(time + 0.04);
-    const ms = Math.max(0, (time - c.currentTime) * 1000) + (dur + 0.12) * 1000;
-    setTimeout(() => { try { src.disconnect(); delay.disconnect(); lpf.disconnect(); fb.disconnect(); g.disconnect(); } catch (e) {} }, ms);
+    if (muted) g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+    src.connect(g).connect(this.guitarOut());
+    src.start(time); src.stop(time + dur + 0.02);
+    const ms = Math.max(0, (time - c.currentTime) * 1000) + (dur + 0.08) * 1000;
+    setTimeout(() => { try { src.disconnect(); g.disconnect(); } catch (e) {} }, ms);
   }
   chuck(time, vel, dir) {
-    const notes = dir === 'U' ? [196, 247, 294, 370] : [98, 147, 196, 247, 294];
-    notes.forEach((f, i) => this.pluck(time + i * 0.011, f, vel * 0.34 * (1 - i * 0.08), true));
+    const notes = dir === 'U' ? [247, 294, 370, 440] : [196, 247, 294, 370, 440];
+    notes.forEach((f, i) => this.pluck(time + i * 0.012, f, vel * 0.4 * (1 - i * 0.1), true));
   }
   strumGuitar(time, chord, dir) {
     const midis = chordMidis(this.soundingChord(chord));
-    if (!midis || !midis.length) { this.chuck(time, dir === 'U' ? 0.4 : 0.55, dir); return; }
+    if (!midis || !midis.length) { this.chuck(time, dir === 'U' ? 0.35 : 0.48, dir); return; }
     const up = dir === 'U', seq = up ? midis.slice().reverse() : midis.slice();
     const gap = up ? 0.014 : 0.02;
     seq.forEach((midi, i) => {
-      const vel = Math.max(0.08, (up ? 0.16 : 0.2) * (1 - i * 0.07));
+      const vel = Math.max(0.06, (up ? 0.16 : 0.2) * (1 - i * 0.07));
       this.pluck(time + i * gap, 440 * Math.pow(2, (midi - 69) / 12), vel, false);
     });
   }
