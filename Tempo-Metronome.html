@@ -2969,6 +2969,7 @@ const __ds_scope = {};
 </sc-if>
 <sc-if value="{{ showChart }}" hint-placeholder-val="{{ false }}">
 <div style="flex:1;min-height:0;overflow-y:auto;padding:14px 16px 24px">
+<div style="font-weight:800;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">{{ chartTitle }}</div>
 <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px">
 <sc-for list="{{ playChart }}" as="cb"><div style="border:2px solid {{ cb.bd }};background:{{ cb.bg }};color:{{ cb.fg }};padding:8px 10px;min-height:72px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;min-width:0"><span style="font-size:11px;color:{{ cb.nfg }}">{{ cb.n }}</span><span style="font-weight:800;font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ cb.text }}</span><span style="font-size:12px;font-weight:700;color:{{ cb.nfg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ cb.real }}</span></div></sc-for>
 </div>
@@ -3761,93 +3762,44 @@ class Component extends DCLogic {
     const k = this.keyEff();
     return xChord(ch, k.tp, false) || ch;
   }
-  guitarBus() {
-    if (this._gBus) return this._gBus;
-    const c = this.ctx, g = c.createGain(), comp = c.createDynamicsCompressor();
-    g.gain.value = 0.85;
-    comp.threshold.value = -14; comp.knee.value = 18; comp.ratio.value = 2; comp.attack.value = 0.012; comp.release.value = 0.25;
-    g.connect(comp).connect(c.destination);
-    this._gBus = g;
+  guitarOut() {
+    if (this._gOut) return this._gOut;
+    const c = this.ctx, g = c.createGain();
+    g.gain.value = 0.8;
+    g.connect(c.destination);
+    this._gOut = g;
     return g;
   }
-  guitarBody() {
-    if (this._body) return this._body;
-    const c = this.ctx, inn = c.createGain();
-    const air = c.createBiquadFilter(), wood = c.createBiquadFilter(), box = c.createBiquadFilter(), shelf = c.createBiquadFilter();
-    air.type = 'peaking'; air.frequency.value = 102; air.Q.value = 0.9; air.gain.value = 6;
-    wood.type = 'peaking'; wood.frequency.value = 205; wood.Q.value = 1.2; wood.gain.value = 4;
-    box.type = 'peaking'; box.frequency.value = 410; box.Q.value = 0.8; box.gain.value = 2;
-    shelf.type = 'highshelf'; shelf.frequency.value = 3200; shelf.gain.value = -4;
-    inn.connect(air).connect(wood).connect(box).connect(shelf).connect(this.guitarBus());
-    this._body = inn;
-    return inn;
-  }
-  guitarWave() {
-    if (this._gWave) return this._gWave;
-    const n = 10, real = new Float32Array(n), imag = new Float32Array(n);
-    const mags = [0, 1, 0.42, 0.18, 0.08, 0.035, 0.015, 0.006, 0.002, 0.0008];
-    for (let i = 1; i < n; i++) imag[i] = mags[i];
-    this._gWave = this.ctx.createPeriodicWave(real, imag);
-    return this._gWave;
-  }
-  pickNoise(time, vel, dest) {
-    const c = this.ctx, src = c.createBufferSource(), hp = c.createBiquadFilter(), lp = c.createBiquadFilter(), g = c.createGain();
-    src.buffer = this.noiseBuf();
-    hp.type = 'highpass'; hp.frequency.value = 2200; hp.Q.value = 0.5;
-    lp.type = 'lowpass'; lp.frequency.value = 7000;
-    g.gain.setValueAtTime(Math.max(0.0001, vel), time);
-    g.gain.exponentialRampToValueAtTime(0.0001, time + 0.016);
-    src.connect(hp).connect(lp).connect(g).connect(dest);
-    src.start(time); src.stop(time + 0.022);
-    const ms = Math.max(0, (time - c.currentTime) * 1000) + 80;
-    setTimeout(() => { try { src.disconnect(); hp.disconnect(); lp.disconnect(); g.disconnect(); } catch (e) {} }, ms);
-  }
-  chuck(time, vel, dir) {
-    const dest = this.guitarBody(), n = dir === 'U' ? 4 : 5;
-    for (let i = 0; i < n; i++) this.pickNoise(time + i * 0.011, vel * (0.42 - i * 0.06), dest);
+  tone(time, freq, vel, dur, attack) {
     const c = this.ctx, o = c.createOscillator(), g = c.createGain();
-    o.type = 'sine'; o.frequency.setValueAtTime(92, time);
+    const peak = Math.max(0.0001, vel);
+    o.type = 'sine';
+    o.frequency.setValueAtTime(freq, time);
     g.gain.setValueAtTime(0.0001, time);
-    g.gain.exponentialRampToValueAtTime(vel * 0.16, time + 0.004);
-    g.gain.exponentialRampToValueAtTime(0.0001, time + 0.055);
-    o.connect(g).connect(dest); o.start(time); o.stop(time + 0.07);
+    g.gain.exponentialRampToValueAtTime(peak, time + attack);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak * 0.4), time + Math.min(dur * 0.25, 0.09));
+    g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+    o.connect(g).connect(this.guitarOut());
+    o.start(time); o.stop(time + dur + 0.02);
+    const ms = Math.max(0, (time - c.currentTime) * 1000) + (dur + 0.08) * 1000;
+    setTimeout(() => { try { o.disconnect(); g.disconnect(); } catch (e) {} }, ms);
   }
   pluck(time, freq, vel) {
-    const c = this.ctx, dest = this.guitarBody();
-    const dur = Math.min(2.4, Math.max(0.85, 140 / Math.sqrt(freq)));
-    const lp = c.createBiquadFilter(), g = c.createGain();
-    lp.type = 'lowpass'; lp.Q.value = 0.55;
-    lp.frequency.setValueAtTime(Math.min(4800, freq * 5 + 700), time);
-    lp.frequency.exponentialRampToValueAtTime(Math.max(320, freq * 1.7), time + 0.32);
-    const peak = Math.max(0.0001, vel);
-    g.gain.setValueAtTime(0.0001, time);
-    g.gain.exponentialRampToValueAtTime(peak, time + 0.005);
-    g.gain.exponentialRampToValueAtTime(peak * 0.55, time + 0.05);
-    g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
-    const wave = this.guitarWave(), nodes = [];
-    [1, 1.0016].forEach((bend, k) => {
-      const o = c.createOscillator(), gg = c.createGain();
-      o.setPeriodicWave(wave);
-      o.frequency.setValueAtTime(freq * bend * 1.003, time);
-      o.frequency.exponentialRampToValueAtTime(freq * bend, time + 0.04);
-      gg.gain.value = k ? 0.5 : 1;
-      o.connect(gg).connect(lp);
-      o.start(time); o.stop(time + dur + 0.02);
-      nodes.push(o, gg);
-    });
-    lp.connect(g).connect(dest);
-    this.pickNoise(time, peak * 0.16, dest);
-    const ms = Math.max(0, (time - c.currentTime) * 1000) + (dur + 0.15) * 1000;
-    setTimeout(() => { try { lp.disconnect(); g.disconnect(); nodes.forEach(n => n.disconnect()); } catch (e) {} }, ms);
+    this.tone(time, freq, vel, Math.min(1.7, freq < 180 ? 1.5 : 1.15), 0.014);
+    this.tone(time, freq * 2, vel * 0.07, 0.22, 0.012);
+  }
+  chuck(time, vel, dir) {
+    const notes = dir === 'U' ? [196, 247, 294, 392] : [110, 147, 196, 247, 294];
+    notes.forEach((f, i) => this.tone(time + i * 0.016, f, vel * 0.2 * (1 - i * 0.1), 0.06, 0.008));
   }
   strumGuitar(time, chord, dir) {
     const midis = chordMidis(this.soundingChord(chord));
-    if (!midis || !midis.length) { this.chuck(time, dir === 'U' ? 0.32 : 0.46, dir); return; }
+    if (!midis || !midis.length) { this.chuck(time, dir === 'U' ? 0.5 : 0.65, dir); return; }
     const up = dir === 'U', seq = up ? midis.slice().reverse() : midis.slice();
-    const gap = up ? 0.013 : 0.018;
+    const gap = up ? 0.016 : 0.022;
     seq.forEach((midi, i) => {
-      const vel = Math.max(0.05, (up ? 0.13 : 0.16) * (1 - i * 0.05));
-      this.pluck(time + i * gap + Math.random() * 0.002, 440 * Math.pow(2, (midi - 69) / 12), vel);
+      const vel = Math.max(0.05, (up ? 0.15 : 0.19) * (1 - i * 0.07));
+      this.pluck(time + i * gap, 440 * Math.pow(2, (midi - 69) / 12), vel);
     });
   }
   moveSec(i, d) {
@@ -4323,6 +4275,9 @@ class Component extends DCLogic {
     const dv = !!s.device || !!s.present, vw = s.vw || 390, vh = s.vh || 844;
     const wide = dv && vw > vh && vw >= 700;
     const lyrOn = song.lyricsOn !== false, curSec = ev && !ev.ci ? secs[ev.sec] : null;
+    const focusIdx = ev && !ev.ci ? ev.sec : (s.solo != null ? s.solo : 0);
+    const focusSec = secs[focusIdx] || null;
+    const focusLyrics = !!(lyrOn && focusSec && lyrLines(focusSec.lyrics).length);
     const lyrBlocks = !songOn || !lyrOn ? [] : secs.map((sec, si) => {
       const lines = lyrLines(sec.lyrics); if (!lines.length) return null;
       const here = !!curSec && ev.sec === si, al = here ? Math.floor(ev.bar / (sec.bpl || 2)) : -1;
@@ -4331,10 +4286,11 @@ class Component extends DCLogic {
         return { k: si + '-' + li, act: act ? '1' : '0', bg: act ? 'var(--color-surface)' : 'transparent', op: act ? 1 : 0.55, segs, chH: segs.some(x => x.chord) ? Math.round((wide ? 18 : 16) * 1.25 * lyrSc) + 'px' : '0' };
       }) };
     }).filter(Boolean);
-    const showLyr = songOn && lyrBlocks.length > 0;
-    const playSec = curSec || secs[s.solo != null ? s.solo : 0], pcb = playSec ? parseChords(playSec.chords) : [];
+    const showLyr = songOn && focusLyrics && lyrBlocks.length > 0;
+    const pcb = focusSec ? parseChords(focusSec.chords) : [];
     const showChart = songOn && !showLyr && pcb.length > 0;
-    const playChart = showChart ? Array.from({ length: playSec.patternBars * playSec.repeat }, (_, b) => { const act = !!curSec && b === ev.bar; return { n: b + 1, text: barText(pcb, b, dch), real: kEff.capo ? barText(pcb, b, real) : '', bg: act ? 'var(--flash)' : 'transparent', fg: act ? 'var(--flash-ink)' : ink, nfg: act ? 'var(--flash-ink)' : 'var(--muted)', bd: act ? 'var(--flash)' : 'var(--color-divider)' }; }) : [];
+    const playChart = showChart ? Array.from({ length: focusSec.patternBars * focusSec.repeat }, (_, b) => { const act = !!(ev && !ev.ci && ev.sec === focusIdx && b === ev.bar); return { n: b + 1, text: barText(pcb, b, dch), real: kEff.capo ? barText(pcb, b, real) : '', bg: act ? 'var(--flash)' : 'transparent', fg: act ? 'var(--flash-ink)' : ink, nfg: act ? 'var(--flash-ink)' : 'var(--muted)', bd: act ? 'var(--flash)' : 'var(--color-divider)' }; }) : [];
+    const chartTitle = focusSec ? focusSec.name : '';
     const curChord = (ev && ev.chord && dch(ev.chord)) || '–', curReal = ev && ev.chord && kEff.capo ? (zh ? '实际 ' : 'Sounds ') + real(ev.chord) : '';
     let nextChord = '', nextBeats = 0;
     if (ev && this.ev) {
@@ -4371,7 +4327,7 @@ class Component extends DCLogic {
       npCellH: compact ? '76px' : '132px', npGlyph: (() => { const sc = ev && !ev.ci ? secs[ev.sec] : null; return (compact ? { 1: '40px', 2: '32px', 3: '26px', 4: '20px' } : { 1: '64px', 2: '46px', 3: '34px', 4: '26px' })[sc ? gOf(sc) : 1]; })(),
       notFull: !fullOn, fullOn, fullDir: wide ? 'row' : 'column', fullLeftFlex: wide ? '1' : 'none', fullRightBd: wide ? '0' : '2px solid var(--color-divider)',
       lyricsOn: lyrOn, lyrSw: sw(lyrOn), toggleLyrics: () => this.updSong(x => ({ ...x, lyricsOn: x.lyricsOn === false })),
-      showLyr, showChart, lyrBlocks, playChart, lyrRef: this.lyrRef, lyrSize: Math.round((wide ? 26 : 21) * lyrSc) + 'px', lyrChordSize: Math.round((wide ? 18 : 16) * lyrSc) + 'px',
+      showLyr, showChart, chartTitle, lyrBlocks, playChart, lyrRef: this.lyrRef, lyrSize: Math.round((wide ? 26 : 21) * lyrSc) + 'px', lyrChordSize: Math.round((wide ? 18 : 16) * lyrSc) + 'px',
       curReal, ...keyVals, ...impVals, ...moreVals, curChord, chordSize: curChord.length <= 3 ? '80px' : curChord.length <= 5 ? '60px' : '44px',
       nextChord: (nextChord && dch(nextChord)) || '–', nextIn: nextChord ? (zh ? nextBeats + ' 拍后' : 'in ' + nextBeats + (nextBeats === 1 ? ' beat' : ' beats')) : '',
       exportData: () => this.exportData(), importData: e => this.importData(e),
