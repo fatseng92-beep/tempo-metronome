@@ -2796,10 +2796,15 @@ const __ds_scope = {};
 </div>
 </div>
 <div style="display:flex;flex-direction:column;min-width:0">
-<div style="padding:16px 16px 10px;display:flex;justify-content:space-between;align-items:baseline"><h6 style="margin:0">{{ t.secTap }}</h6><span style="font-size:11px;color:var(--muted)">{{ t.countIn }}</span></div>
+<div style="padding:16px 16px 6px;display:flex;justify-content:space-between;align-items:baseline"><h6 style="margin:0">{{ t.secTap }}</h6><span style="font-size:11px;color:var(--muted)">{{ t.countIn }}</span></div>
+<div style="padding:0 16px 10px;font-size:12px;color:var(--muted);text-wrap:pretty">{{ pracNote }}</div>
 <sc-for list="{{ secRows }}" as="r" hint-placeholder-count="3">
 <div style="border-top:2px solid var(--color-divider);background:{{ r.bg }}">
-<button sc-camel-on-click="{{ r.select }}" aria-expanded="{{ r.selected }}" style="all:unset;box-sizing:border-box;cursor:pointer;width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 16px">
+<div style="display:flex;align-items:stretch">
+<button sc-camel-on-click="{{ r.togglePrac }}" aria-pressed="{{ r.prac }}" aria-label="{{ r.pracAria }}" style="all:unset;cursor:pointer;width:44px;flex:none;display:flex;align-items:center;justify-content:center">
+<span style="width:22px;height:22px;box-sizing:border-box;border:2px solid {{ r.pracBd }};background:{{ r.pracBg }};display:flex;align-items:center;justify-content:center;color:var(--acc-ink)"><sc-if value="{{ r.prac }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></span>
+</button>
+<button sc-camel-on-click="{{ r.select }}" aria-expanded="{{ r.selected }}" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 16px 12px 0">
 <span style="font-family:var(--font-heading);font-weight:800;font-size:20px;width:26px;color:{{ r.numColor }}">{{ r.num }}</span>
 <span style="display:flex;flex-direction:column;gap:3px;min-width:0">
 <span style="font-weight:800;font-size:16px;line-height:1.2">{{ r.name }}</span>
@@ -2809,6 +2814,7 @@ const __ds_scope = {};
 </span>
 <span style="display:flex;flex-direction:column;align-items:flex-start"><span style="font-family:var(--font-heading);font-weight:800;font-size:22px;line-height:1">{{ r.total }}</span><span style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)">{{ t.barsLower }}</span></span>
 </button>
+</div>
 <sc-if value="{{ r.selected }}">
 <div style="padding:4px 16px 16px;display:flex;flex-direction:column;gap:14px">
 <div class="field" style="margin:0">
@@ -2978,18 +2984,15 @@ const __ds_scope = {};
 </div>
 </div>
 </sc-if>
-<button sc-camel-on-click="{{ toggleGuitar }}" role="switch" aria-checked="{{ guitarOn }}" style="all:unset;box-sizing:border-box;cursor:pointer;width:calc(100% - 32px);margin:0 16px 8px;display:flex;align-items:center;gap:12px;padding:10px 12px;min-height:56px;border:2px solid var(--color-divider);background:var(--color-surface)">
-<span style="display:flex;flex-direction:column;gap:2px;margin-right:auto;min-width:0"><span style="font-weight:800;font-size:16px">{{ t.guitar }}</span><span style="font-size:13px;color:var(--muted);text-wrap:pretty">{{ t.guitarDesc }}</span><span style="font-size:11px;color:var(--muted)">{{ t.guitarCredit }}</span></span>
-<span style="flex:none;width:48px;height:28px;border:2px solid {{ guitarSw.bd }};background:{{ guitarSw.track }};display:flex;justify-content:{{ guitarSw.justify }};align-items:center;padding:2px;box-sizing:border-box"><span style="width:20px;height:20px;background:{{ guitarSw.knob }}"></span></span>
-</button>
-<div style="flex:none;padding:0 16px 12px;display:flex;gap:4px">
-<button class="btn btn-primary" sc-camel-on-click="{{ toggleSong }}" style="flex:1;min-width:0;height:60px;justify-content:space-between;font-size:18px;padding:0 18px;background:{{ songPlayBg }};color:{{ songPlayFg }}">
-<span>{{ songPlayLabel }}</span>
-<sc-if value="{{ songOn }}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14"></rect></svg></sc-if>
-<sc-if value="{{ songOff }}" hint-placeholder-val="{{ true }}"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg></sc-if>
-</button>
-<button class="btn btn-secondary" sc-camel-on-click="{{ toggleSongLoop }}" aria-pressed="{{ songLoop }}" style="flex:none;height:60px;padding:0 14px;gap:8px;justify-content:flex-start;font-size:15px;background:{{ loopBg }};color:{{ loopFg }};border-color:{{ loopBd }}"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>{{ t.loop }}</button>
+<div style="flex:none;padding:0 16px 4px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px">
+<button sc-camel-on-click="{{ toggleGuitar }}" aria-pressed="{{ guitarOn }}" style="all:unset;box-sizing:border-box;cursor:pointer;min-width:0;height:48px;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 6px;font-weight:800;font-size:14px;background:{{ gBg }};color:{{ gFg }};border:2px solid {{ gBd }}"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>{{ t.guitarShort }}</button>
+<button class="btn btn-primary" sc-camel-on-click="{{ toggleSong }}" style="min-width:0;height:48px;justify-content:center;font-size:14px;padding:0 6px;gap:6px;background:{{ songPlayBg }};color:{{ songPlayFg }};border-color:{{ songPlayBg }}">
+<sc-if value="{{ songOn }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14"></rect></svg></sc-if>
+<sc-if value="{{ songOff }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg></sc-if>
+{{ songPlayShort }}</button>
+<button class="btn btn-secondary" sc-camel-on-click="{{ toggleSongLoop }}" aria-pressed="{{ songLoop }}" style="min-width:0;height:48px;padding:0 6px;gap:6px;justify-content:center;font-size:14px;background:{{ loopBg }};color:{{ loopFg }};border-color:{{ loopBd }}"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>{{ t.loop }}</button>
 </div>
+<div style="padding:0 16px 10px;font-size:11px;color:var(--muted)">{{ t.guitarCredit }}</div>
 </sc-if>
 
 <sc-if value="{{ onLibrary }}" hint-placeholder-val="{{ false }}">
@@ -3299,6 +3302,22 @@ const PAIRS = {
 const parseChords = str => { const t = (str || '').trim().replace(/^\|+|\|+$/g, ''); if (!t.trim()) return []; return t.split('|').map(x => x.trim().split(/\s+/).filter(Boolean).map(normChord)); };
 const chordAt = (toks, b, beats) => { if (!toks.length) return ''; let k = Math.floor(b * toks.length / beats); while (k >= 0 && toks[k] === '.') k--; return k >= 0 ? toks[k] : ''; };
 const barText = (cb, b, fn) => cb.length ? (cb[b % cb.length].map(x => x === '.' ? '·' : fn ? fn(x) : x).join(' ') || '–') : '–';
+const nextSlot = (evs, pos, loop, loopStart) => {
+  if (!evs || pos < 0 || !evs[pos] || evs[pos].ci) return { chord: '', beats: 0 };
+  const curEv = evs[pos], cur = curEv.chord || '';
+  let i = pos, beats = 0, guard = 0, wrapped = false;
+  while (guard++ < 4000) {
+    i++;
+    if (i >= evs.length) { if (!loop) return { chord: '', beats: 0 }; i = loopStart || 0; wrapped = true; }
+    const e = evs[i];
+    if (!e || e.ci || e.j !== 0) continue;
+    beats++;
+    const newBar = e.beat === 0 && (wrapped || e.bar !== curEv.bar || e.sec !== curEv.sec);
+    if (newBar || (e.chord && e.chord !== cur)) return { chord: e.chord || '', beats };
+    wrapped = false;
+  }
+  return { chord: '', beats: 0 };
+};
 const lyrLines = str => (str || '').split('\n').map(x => x.trim()).filter(Boolean);
 const parseLyric = line => {
   const out = [], re = /\[([^\]]*)\]/g; let m, pos = 0, ch = '';
@@ -3561,7 +3580,8 @@ Object.assign(TK, { binTitle: 'Recycle bin', binEmpty: 'Empty bin', restore: 'Re
 Object.assign(ZH, { 'Use a beat': '套用节奏', 'Use a pattern': '套用节奏型', 'This metronome': '当前节拍器', 'Copies time, accents, subdivision, strum and tempo onto this section. Heard the next time you press play.': '把拍号、重音、细分、扫弦和速度套到这个段落。下次按播放才会听到。', 'Copies time, accents, subdivision and strum. The song tempo stays the same.': '套用拍号、重音、细分和扫弦。歌曲速度保持不变。', 'Guitar strum': '吉他扫弦', 'Play the chords and strum pattern instead of the click.': '按和弦和扫弦节奏出声。关掉就是节拍器。', 'Play guitar': '播放吉他', 'Steel-string sample: FluidR3 GM, CC BY 3.0.': '钢弦采样：FluidR3 GM，CC BY 3.0。', 'Using “': '已套用“', ' · plays on the next start': ' · 下次播放生效', 'Strum patterns': '扫弦节奏型', 'Save pattern': '保存节奏型', 'Save as new': '另存为', 'Save': '保存', 'Replace': '替换', 'Saves time signature, accents, subdivision and strum. Tempo is not included.': '保存拍号、重音、细分和扫弦。不包含速度。', 'Replace updates the open pattern. Save as adds a new one. Tempo is not included.': '替换会改掉当前打开的节奏型。另存为会新增一个。不包含速度。', 'Set a time signature and strum, then tap Save.': '设定拍号和扫弦，然后点保存。', 'Your songs and strum patterns': '你的歌曲和扫弦节奏型', 'Unsaved pattern': '未保存的节奏型', 'That name is already used': '这个名称已经有了', 'Pattern': '节奏型' });
 Object.assign(TK, { useBeat: 'Use a pattern', useBeatHint: 'Copies time, accents, subdivision and strum. The song tempo stays the same.', thisMetro: 'This metronome', guitar: 'Guitar strum', guitarDesc: 'Play the chords and strum pattern instead of the click.', guitarCredit: 'Steel-string sample: FluidR3 GM, CC BY 3.0.', savedBeats: 'Strum patterns', saveBeat: 'Save pattern', nothingDesc: 'Set a time signature and strum, then tap Save.', saveAs: 'Save as new', replace: 'Replace' });
 Object.assign(ZH, { 'Kick / Snare': '底鼓 / 军鼓', 'Rim / Hat': '边击 / 踩镲', 'Cowbell / Clave': '牛铃 / 响棒', 'Recorded kick on the accent, snare on the beats': '重音是采样底鼓，其他拍是军鼓', 'Recorded side-stick on the accent, hi-hat on the beats': '重音是鼓边，其他拍是踩镲', 'Recorded cowbell on the accent, clave on the beats': '重音是牛铃，其他拍是响棒', 'Recorded drums in this list: FluidR3 GM, CC BY 3.0.': '列表里的鼓声是采样：FluidR3 GM，CC BY 3.0。' });
-Object.assign(TK, { drumCredit: 'Recorded drums in this list: FluidR3 GM, CC BY 3.0.' });
+Object.assign(ZH, { 'Play': '播放', 'Stop': '停止', 'Guitar': '吉他', 'Tick a section to practice it. Leave them all off to play the whole song.': '勾选段落来练习。全部不勾就是播放整首歌。', 'Practice: ': '练习：', 'Practice ': '练习 ', 'Stop practicing ': '取消练习 ' });
+Object.assign(TK, { play: 'Play', stop: 'Stop', guitarShort: 'Guitar', pracHint: 'Tick a section to practice it. Leave them all off to play the whole song.' });
 const marking = b => b < 60 ? 'Largo' : b < 76 ? 'Adagio' : b < 108 ? 'Andante' : b < 120 ? 'Moderato' : b < 168 ? 'Allegro' : 'Presto';
 
 class Component extends DCLogic {
@@ -3582,7 +3602,7 @@ class Component extends DCLogic {
     this.state = {
       bpm: cur.bpm ?? 120, beats: cur.beats ?? 4, den: cur.den ?? 4, sub: cur.sub ?? 1, grid: cur.grid ?? cur.sub ?? 1,
       accents: cur.accents ?? ['accent', 'normal', 'normal', 'normal'], strum: cur.strum ?? fitStrum(null, 1, cur.beats ?? 4, cur.grid ?? cur.sub ?? 1), presetId: cur.presetId ?? null,
-      playing: false, active: -1, dark: st.dark ?? false, songLoop: st.songLoop ?? false, guitar: st.guitar ?? false, color: OLD_COLOR[st.color] || st.color || 'Teal', lang: st.lang ?? ((navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en'), sound: st.sound ?? 'Click', flashOn: st.flashOn ?? true, show: { ...ALL_ON, ...(st.show || {}) }, pulse: null, screen: 'metronome', songs: sg.songs, songId: sg.songId, secSel: -1, songPos: -1, mode: null, presets, dialog: false, draftName: '', toast: '', kd: null, imp: null, kSave: false, setlist: sg.setlist || [], sets: sg.sets, setId: sg.setId, bin: Array.isArray(sg.bin) ? sg.bin.filter(b => b && b.item && ['song', 'preset', 'set'].includes(b.type) && Date.now() - (b.at || 0) < 30 * 864e5) : [], binOpen: false, libOpen: { set: st.libOpen?.set !== false, song: st.libOpen?.song !== false, beat: st.libOpen?.beat !== false }, trainer: { on: false, step: 2, every: 4, target: 140, ...(st.trainer || {}) }, lyrScale: st.lyrScale ?? 1, lastBackup: st.lastBackup ?? null, firstUse: st.firstUse, bkSnooze: st.bkSnooze ?? 0, libQ: '', libSort: 'recent', undo: null,
+      playing: false, active: -1, dark: st.dark ?? false, songLoop: st.songLoop ?? false, guitar: st.guitar ?? false, color: OLD_COLOR[st.color] || st.color || 'Teal', lang: st.lang ?? ((navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en'), sound: st.sound ?? 'Click', flashOn: st.flashOn ?? true, show: { ...ALL_ON, ...(st.show || {}) }, pulse: null, screen: 'metronome', songs: sg.songs, songId: sg.songId, secSel: -1, prac: {}, pracPlay: null, songPos: -1, mode: null, presets, dialog: false, draftName: '', toast: '', kd: null, imp: null, kSave: false, setlist: sg.setlist || [], sets: sg.sets, setId: sg.setId, bin: Array.isArray(sg.bin) ? sg.bin.filter(b => b && b.item && ['song', 'preset', 'set'].includes(b.type) && Date.now() - (b.at || 0) < 30 * 864e5) : [], binOpen: false, libOpen: { set: st.libOpen?.set !== false, song: st.libOpen?.song !== false, beat: st.libOpen?.beat !== false }, trainer: { on: false, step: 2, every: 4, target: 140, ...(st.trainer || {}) }, lyrScale: st.lyrScale ?? 1, lastBackup: st.lastBackup ?? null, firstUse: st.firstUse, bkSnooze: st.bkSnooze ?? 0, libQ: '', libSort: 'recent', undo: null,
     };
     this.taps = [];
     this.lyrRef = el => { this.lyrEl = el; };
@@ -3692,17 +3712,32 @@ class Component extends DCLogic {
   toggleMetro() { (this.state.playing && this.state.mode === 'metro') ? this.stopAudio() : this.startAudio(); }
   toggleSong() { (this.state.playing && this.state.mode === 'song') ? this.stopAudio() : this.startSong(); }
   toggleSolo(i) { (this.state.playing && this.state.mode === 'song' && this.solo === i) ? this.stopAudio() : this.startSong(i); }
+  pracIdx(song) {
+    const ids = (this.state.prac && this.state.prac[song.id]) || [];
+    return song.sections.map((sec, i) => ids.includes(sec.id) ? i : -1).filter(i => i >= 0);
+  }
+  togglePrac(id) {
+    const song = this.curSong();
+    this.setState(s => {
+      const cur = (s.prac && s.prac[song.id]) || [];
+      const next = cur.includes(id) ? cur.filter(x => x !== id) : cur.concat([id]);
+      return { prac: { ...s.prac, [song.id]: next } };
+    });
+  }
   buildEvents(song, only) {
-    const ev = [], f = only != null ? song.sections[only] : song.sections[0];
-    if (!f) return ev;
+    const ev = [];
+    const list = only == null ? song.sections.map((_, i) => i) : (Array.isArray(only) ? only : [only]);
+    const f = song.sections[list[0]];
+    if (!f || !list.length) return ev;
     const facc = fitAccents(f.accents || [], f.beats);
     for (let b = 0; b < f.beats; b++) {
       const kind = facc[b] || 'normal';
       ev.push({ ci: true, beat: b, j: 0, sub: 1, kind, click: kind !== 'mute', stroke: '' });
     }
     this.loopStart = ev.length;
-    song.sections.forEach((sec, si) => {
-      if (only != null && si !== only) return;
+    list.forEach(si => {
+      const sec = song.sections[si];
+      if (!sec) return;
       const total = sec.patternBars * sec.repeat, cb = parseChords(sec.chords);
       const accs = fitAccents(sec.accents || [], sec.beats);
       let last = '';
@@ -3732,39 +3767,81 @@ class Component extends DCLogic {
       return;
     }
     this.stopAudio();
-    const song = this.curSong(); this.solo = only != null ? only : null; this.ev = this.buildEvents(song, this.solo);
+    const song = this.curSong();
+    const picked = only == null ? (() => { const ix = this.pracIdx(song); return ix.length ? ix : null; })() : only;
+    this.solo = typeof only === 'number' ? only : null;
+    this.ev = this.buildEvents(song, this.solo != null ? this.solo : picked);
     if (!this.ev.length) return;
     this.ensureCtx(); this.mode = 'song'; this.ei = 0;
     this.next = this.ctx.currentTime + 0.08;
     this.timer = setInterval(() => this.schedule(), 25);
-    this.setState({ playing: true, mode: 'song', songPos: -1, solo: this.solo }); this.wake(true);
+    this.setState({ playing: true, mode: 'song', songPos: -1, solo: this.solo, pracPlay: Array.isArray(picked) ? picked.slice() : null }); this.wake(true);
   }
   stopAudio() {
-    clearInterval(this.timer); this.timer = null; clearTimeout(this.endT); this.wake(false);
+    clearInterval(this.timer); this.timer = null; clearTimeout(this.endT); this.endT = null; this.wake(false);
+    if (this._vraf) { cancelAnimationFrame(this._vraf); this._vraf = 0; }
+    this.vq = []; this._vkey = '';
     if (this.mode === 'metro' && this.trStart != null) { const reached = this.state.bpm, b0 = this.trStart; this.trStart = null; if (reached !== b0) { this.setState({ bpm: b0 }); this.flash((this.state.lang === 'zh' ? '这次练到 ' : 'You reached ') + reached + ' BPM'); } }
     (this.vis || []).forEach(clearTimeout); this.vis = []; this.mode = null; this.solo = null;
     if (this._fsSong) { this._fsSong = false; if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {}); }
-    if (this.state.playing) this.setState({ playing: false, mode: null, active: -1, activeSub: 0, songPos: -1, solo: null });
+    if (this.state.playing || this.state.pracPlay) this.setState({ playing: false, mode: null, active: -1, activeSub: 0, songPos: -1, solo: null, pracPlay: null });
+  }
+  heardNow() {
+    const c = this.ctx;
+    if (!c) return 0;
+    const lat = typeof c.outputLatency === 'number' ? c.outputLatency : (c.baseLatency || 0);
+    return c.currentTime - lat;
+  }
+  queueVis(time, patch) {
+    this.vq = this.vq || [];
+    this.vq.push({ t: time, patch });
+    if (this.vq.length > 64) this.vq.splice(0, this.vq.length - 64);
+    this.armVis();
+  }
+  armVis() {
+    if (this._vraf) return;
+    const step = () => {
+      this._vraf = 0;
+      if (!this.timer || !this.vq || !this.vq.length) return;
+      const now = this.heardNow() + 0.016;
+      let last = null;
+      while (this.vq.length && this.vq[0].t <= now) last = this.vq.shift();
+      if (last) {
+        const key = JSON.stringify(last.patch);
+        if (key !== this._vkey) { this._vkey = key; this.setState(last.patch); }
+      }
+      if (this.vq.length) this._vraf = requestAnimationFrame(step);
+    };
+    this._vraf = requestAnimationFrame(step);
   }
   scheduleSong() {
     const c = this.ctx, bpm = this.curSong().bpm;
     if (c.state === 'suspended') c.resume();
-    if (this.next < c.currentTime - 0.05) this.next = c.currentTime + 0.02;
-    let guard = 0;
-    while (this.ei < this.ev.length && this.next < c.currentTime + 0.12 && guard++ < 6) {
-      const e = this.ev[this.ei], idx = this.ei;
-      if (this.state.guitar) {
-        if (e.ci) { if (e.click !== false) this.chuck(this.next, e.kind === 'accent' ? 0.42 : 0.24, 'D'); }
-        else if (e.stroke === 'D' || e.stroke === 'U') this.strumGuitar(this.next, e.chord, e.stroke);
-      } else if (e.click !== false) this.click(this.next, e.kind);
-      const delay = Math.max(0, (this.next - c.currentTime) * 1000);
-      this.vis = (this.vis || []).slice(-8);
-      this.vis.push(setTimeout(() => { if (this.timer) this.setState({ songPos: idx }); }, delay));
-      this.next += 60 / bpm / e.sub;
+    const loop = this.solo != null || this.state.songLoop;
+    let hops = 0;
+    while (this.next < c.currentTime - 0.05 && hops++ < 4000) {
+      if (this.ei >= this.ev.length) { if (!loop) break; this.ei = this.loopStart || 0; }
+      const e = this.ev[this.ei];
+      if (!e) break;
+      this.next += 60 / bpm / (e.sub || 1);
       this.ei++;
-      if ((this.solo != null || this.state.songLoop) && this.ei >= this.ev.length) this.ei = this.loopStart;
+      if (loop && this.ei >= this.ev.length) this.ei = this.loopStart || 0;
     }
-    if (this.ei >= this.ev.length && !this.endT) {
+    let guard = 0;
+    while (this.ei < this.ev.length && this.next < c.currentTime + 0.25 && guard++ < 16) {
+      const e = this.ev[this.ei], idx = this.ei, late = this.next < c.currentTime - 0.02;
+      if (!late) {
+        if (this.state.guitar) {
+          if (e.ci) { if (e.click !== false) this.chuck(this.next, e.kind === 'accent' ? 0.42 : 0.24, 'D'); }
+          else if (e.stroke === 'D' || e.stroke === 'U') this.strumGuitar(this.next, e.chord, e.stroke);
+        } else if (e.click !== false) this.click(this.next, e.kind);
+      }
+      if (!late) this.queueVis(this.next, { songPos: idx });
+      this.next += 60 / bpm / (e.sub || 1);
+      this.ei++;
+      if (loop && this.ei >= this.ev.length) this.ei = this.loopStart || 0;
+    }
+    if (this.ei >= this.ev.length && !loop && !this.endT) {
       clearInterval(this.timer);
       this.endT = setTimeout(() => { this.endT = null; this.timer = 1; this.stopAudio(); this.songDone(); }, Math.max(0, (this.next - c.currentTime) * 1000));
     }
@@ -3899,19 +3976,28 @@ class Component extends DCLogic {
   schedule() {
     if (this.mode === 'song') return this.scheduleSong();
     const c = this.ctx, s = this.state;
-    while (this.next < c.currentTime + 0.12) {
-      const sub = s.sub, g = s.grid || sub, total = s.beats * g;
-      const t = this.tick % total, beat = Math.floor(t / g), step = t % g;
-      const kind = s.accents[beat] || 'normal';
-      if (kind !== 'mute' && (step * sub) % g === 0) this.click(this.next, step ? 'sub' : kind);
-      {
-        const delay = Math.max(0, (this.next - c.currentTime) * 1000);
-        this.vis = (this.vis || []).slice(-8);
-        this.vis.push(setTimeout(() => {
-          if (!this.timer) return;
-          this.setState({ active: beat, activeSub: step });
-        }, delay));
+    const g = s.grid || s.sub, step = 60 / s.bpm / g, total = s.beats * g;
+    if (this.next < c.currentTime - 0.05 && step > 0) {
+      let skip = Math.ceil((c.currentTime - 0.02 - this.next) / step);
+      if (!isFinite(skip) || skip < 1) skip = 1;
+      if (skip > 8000) skip = 8000;
+      const wraps = Math.floor((this.tick + skip) / total);
+      this.tick = (this.tick + skip) % total;
+      this.next += skip * step;
+      const tr = s.trainer;
+      if (wraps && tr.on && this.trStart != null) {
+        const had = this.trBars || 0;
+        const bumps = Math.floor((had + wraps) / tr.every) - Math.floor(had / tr.every);
+        this.trBars = had + wraps;
+        if (bumps > 0 && s.bpm < tr.target) this.setBpm(Math.min(tr.target, s.bpm + tr.step * bumps));
       }
+    }
+    let guard = 0;
+    while (this.next < c.currentTime + 0.25 && guard++ < 24) {
+      const t = this.tick % total, beat = Math.floor(t / g), st = t % g;
+      const kind = s.accents[beat] || 'normal';
+      if (kind !== 'mute' && (st * s.sub) % g === 0) this.click(this.next, st ? 'sub' : kind);
+      this.queueVis(this.next, { active: beat, activeSub: st });
       this.next += 60 / s.bpm / g;
       this.tick = (t + 1) % total;
       if (this.tick === 0) this.trBar();
@@ -4307,10 +4393,10 @@ class Component extends DCLogic {
         };
       });
     };
-    let barsBefore = 0; const barStart = secs.map(x => { const v = barsBefore; barsBefore += x.patternBars * x.repeat; return v; });
+    const playOrder = (s.pracPlay && s.pracPlay.length) ? s.pracPlay : (s.solo != null ? [s.solo] : secs.map((_, i) => i));
     let np = { npTitle: L('Count-in'), npBar: '', npProgress: '0%', npCols: colsFor(4), npBeats: [], npNext: '' };
     if (ev && ev.ci) {
-      const f = secs[0];
+      const f = secs[playOrder[0]] || secs[0];
       np = { npTitle: L('Count-in'), npBar: L('Get ready'), npProgress: '0%', npCols: colsFor(f.beats), npNext: L('Next: ') + f.name,
         npBeats: Array.from({ length: f.beats }, (_, b) => {
           const ak = (fitAccents(f.accents || [], f.beats)[b]) || 'normal';
@@ -4321,11 +4407,26 @@ class Component extends DCLogic {
     } else if (ev) {
       const sec = secs[ev.sec];
       if (sec) {
-        const nxt = ev.bar + 1 < sec.patternBars * sec.repeat ? null : secs[ev.sec + 1];
-        np = { npTitle: sec.name, npBar: zh ? '第 ' + (ev.bar + 1) + ' / ' + sec.patternBars * sec.repeat + ' 小节' : 'Bar ' + (ev.bar + 1) + ' of ' + sec.patternBars * sec.repeat, npProgress: Math.round(100 * (barStart[ev.sec] + ev.bar + 1) / totalBars) + '%',
-          npCols: colsFor(sec.beats), npBeats: barCells(sec, ev.sec, ev.pb, false), npNext: nxt ? L('Next: ') + nxt.name : (ev.bar + 1 < sec.patternBars * sec.repeat ? L('Then: ') + (secs[ev.sec + 1] ? secs[ev.sec + 1].name : L('End')) : (s.solo != null || s.songLoop) ? L('Next: ') + (s.solo != null ? sec.name : secs[0].name) : L('Last bar of the song')) };
+        const posIn = playOrder.indexOf(ev.sec);
+        const after = posIn >= 0 ? playOrder[posIn + 1] : null;
+        const loopBack = (s.solo != null || s.songLoop) && playOrder.length ? playOrder[0] : null;
+        const more = ev.bar + 1 < sec.patternBars * sec.repeat;
+        const afterName = after != null && secs[after] ? secs[after].name : '';
+        const backName = loopBack != null && secs[loopBack] ? secs[loopBack].name : '';
+        let npNext;
+        if (!more && afterName) npNext = L('Next: ') + afterName;
+        else if (more) npNext = L('Then: ') + (afterName || backName || L('End'));
+        else if (backName) npNext = L('Next: ') + backName;
+        else npNext = L('Last bar of the song');
+        const doneBars = playOrder.slice(0, Math.max(0, posIn)).reduce((a, si) => a + (secs[si] ? secs[si].patternBars * secs[si].repeat : 0), 0) + ev.bar + 1;
+        const selBars = playOrder.reduce((a, si) => a + (secs[si] ? secs[si].patternBars * secs[si].repeat : 0), 0) || totalBars || 1;
+        np = { npTitle: sec.name, npBar: zh ? '第 ' + (ev.bar + 1) + ' / ' + sec.patternBars * sec.repeat + ' 小节' : 'Bar ' + (ev.bar + 1) + ' of ' + sec.patternBars * sec.repeat, npProgress: Math.round(100 * doneBars / selBars) + '%',
+          npCols: colsFor(sec.beats), npBeats: barCells(sec, ev.sec, ev.pb, false), npNext };
       }
     }
+    const pracIds = (s.prac && s.prac[song.id]) || [];
+    const pracOrder = secs.map((sec, i) => pracIds.includes(sec.id) ? i : -1).filter(i => i >= 0);
+    const pracNote = pracOrder.length ? L('Practice: ') + pracOrder.map(i => secs[i].name).join(' → ') : L('Tick a section to practice it. Leave them all off to play the whole song.');
     const secRows = secs.map((sec, i) => {
       const total = sec.patternBars * sec.repeat, sel = s.secSel === i, here = !!ev && !ev.ci && ev.sec === i;
       const subL = subLab(sec.sub);
@@ -4348,6 +4449,11 @@ class Component extends DCLogic {
             bplDec: () => this.updSec(i, x => ({ ...x, bpl: Math.max(1, (x.bpl || 2) - 1) })), bplInc: () => this.updSec(i, x => ({ ...x, bpl: Math.min(8, (x.bpl || 2) + 1) })),
             lyrNote: nl ? (zh ? nl + ' 行 × ' + bpl + ' 小节 = ' + Math.min(nl * bpl, total) + ' / ' + total + ' 小节' : nl + (nl > 1 ? ' lines' : ' line') + ' × ' + bpl + ' = ' + Math.min(nl * bpl, total) + ' of ' + total + ' bars') : '' };
         })(), bg: here || sel ? 'var(--color-surface)' : 'transparent', numColor: here ? 'var(--acc-text)' : 'var(--muted)',
+        prac: pracIds.includes(sec.id),
+        pracAria: (pracIds.includes(sec.id) ? L('Stop practicing ') : L('Practice ')) + sec.name,
+        pracBd: pracIds.includes(sec.id) ? acc : 'var(--color-divider)',
+        pracBg: pracIds.includes(sec.id) ? acc : 'transparent',
+        togglePrac: () => this.togglePrac(sec.id),
         select: () => this.setState({ secSel: sel ? -1 : i }),
         onName: e => { const v = e.target.value; this.updSec(i, x => ({ ...x, name: v })); },
         steppers: [
@@ -4383,10 +4489,11 @@ class Component extends DCLogic {
     const dv = !!s.device || !!s.present, vw = s.vw || 390, vh = s.vh || 844;
     const wide = dv && vw > vh && vw >= 700;
     const lyrOn = song.lyricsOn !== false, curSec = ev && !ev.ci ? secs[ev.sec] : null;
-    const focusIdx = ev && !ev.ci ? ev.sec : (s.solo != null ? s.solo : 0);
+    const focusIdx = ev && !ev.ci ? ev.sec : ((s.pracPlay && s.pracPlay.length) ? s.pracPlay[0] : (s.solo != null ? s.solo : 0));
     const focusSec = secs[focusIdx] || null;
     const focusLyrics = !!(lyrOn && focusSec && lyrLines(focusSec.lyrics).length);
-    const lyrBlocks = !songOn || !lyrOn ? [] : secs.map((sec, si) => {
+    const lyrBlocks = !songOn || !lyrOn ? [] : playOrder.map(si => {
+      const sec = secs[si]; if (!sec) return null;
       const lines = lyrLines(sec.lyrics); if (!lines.length) return null;
       const here = !!curSec && ev.sec === si, al = here ? Math.floor(ev.bar / (sec.bpl || 2)) : -1;
       return { name: sec.name, fg: here ? 'var(--acc-text)' : 'var(--muted)', lines: lines.map((ln, li) => {
@@ -4401,9 +4508,9 @@ class Component extends DCLogic {
     const chartTitle = focusSec ? focusSec.name : '';
     const curChord = (ev && ev.chord && dch(ev.chord)) || '–', curReal = ev && ev.chord && kEff.capo ? (zh ? '实际 ' : 'Sounds ') + real(ev.chord) : '';
     let nextChord = '', nextBeats = 0;
-    if (ev && this.ev) {
-      const loop = s.solo != null || s.songLoop, cur = ev.chord || ''; let i = s.songPos, guard = 0;
-      while (guard++ < 4000) { i++; if (i >= this.ev.length) { if (!loop) break; i = this.loopStart; } const e = this.ev[i]; if (e.j === 0) nextBeats++; if (e.chord && e.chord !== cur) { nextChord = e.chord; break; } }
+    if (ev && this.ev && !ev.ci) {
+      const slot = nextSlot(this.ev, s.songPos, s.solo != null || !!s.songLoop, this.loopStart);
+      nextChord = slot.chord; nextBeats = slot.beats;
     }
     const fullOn = songOn && scr === 'song', compact = (showLyr || showChart) && !wide;
     const zoom = Math.max(0.45, Math.min(1, (vh - 112) / 864));
@@ -4426,12 +4533,13 @@ class Component extends DCLogic {
       songBpm: song.bpm, songMarking: mk(song.bpm),
       songMinusDown: () => this.holdStart(-1, 'song'), songPlusDown: () => this.holdStart(1, 'song'),
       secCount: secs.length, totalBars, songLength: fmtLen(Math.round(totalBeats * 60 / song.bpm + (secs[0] ? secs[0].beats * 60 / song.bpm : 0))),
-      songOn, songOff: !songOn, ...np, secRows, addSection: () => this.addSection(),
+      songOn, songOff: !songOn, ...np, secRows, pracNote, addSection: () => this.addSection(),
       toggleSong: () => this.toggleSong(),
       songLoop: !!s.songLoop, toggleSongLoop: () => this.setState({ songLoop: !s.songLoop }),
       guitarOn: !!s.guitar, guitarSw: sw(!!s.guitar), toggleGuitar: () => { const on = !s.guitar; this.setState({ guitar: on }); if (on) this.loadGuitar(); },
+      gBg: s.guitar ? acc : 'transparent', gFg: s.guitar ? 'var(--acc-ink)' : ink, gBd: s.guitar ? acc : 'var(--color-divider)',
       loopBg: s.songLoop ? ink : 'transparent', loopFg: s.songLoop ? 'var(--color-bg)' : ink, loopBd: s.songLoop ? ink : 'var(--color-divider)',
-      loopNote: s.solo != null ? L('Loop') + ' · ' + (secs[s.solo] ? secs[s.solo].name : '') : L(s.songLoop ? 'Looping song' : 'Plays once'),
+      loopNote: s.solo != null ? L('Loop') + ' · ' + (secs[s.solo] ? secs[s.solo].name : '') : ((songOn && s.pracPlay && s.pracPlay.length) ? ((s.songLoop ? L('Loop') + ' · ' : '') + s.pracPlay.map(i => secs[i] && secs[i].name).filter(Boolean).join(' → ')) : L(s.songLoop ? 'Looping song' : 'Plays once')),
       npCellH: compact ? '76px' : '132px', npGlyph: (() => { const sc = ev && !ev.ci ? secs[ev.sec] : null; return (compact ? { 1: '40px', 2: '32px', 3: '26px', 4: '20px' } : { 1: '64px', 2: '46px', 3: '34px', 4: '26px' })[sc ? gOf(sc) : 1]; })(),
       notFull: !fullOn, fullOn, fullDir: wide ? 'row' : 'column', fullLeftFlex: wide ? '1' : 'none', fullRightBd: wide ? '0' : '2px solid var(--color-divider)',
       lyricsOn: lyrOn, lyrSw: sw(lyrOn), toggleLyrics: () => this.updSong(x => ({ ...x, lyricsOn: x.lyricsOn === false })),
@@ -4439,7 +4547,7 @@ class Component extends DCLogic {
       curReal, ...keyVals, ...impVals, ...moreVals, curChord, chordSize: curChord.length <= 3 ? '80px' : curChord.length <= 5 ? '60px' : '44px',
       nextChord: (nextChord && dch(nextChord)) || '–', nextIn: nextChord ? (zh ? nextBeats + ' 拍后' : 'in ' + nextBeats + (nextBeats === 1 ? ' beat' : ' beats')) : '',
       exportData: () => this.exportData(), importData: e => this.importData(e),
-      songPlayLabel: songOn ? (s.solo != null && secs[s.solo] ? L('Stop · looping ') + secs[s.solo].name : ev && !ev.ci ? L('Stop · ') + np.npBar : L('Stop · count-in')) : (s.guitar ? L('Play guitar') : L('Play song')),
+      songPlayShort: songOn ? L('Stop') : L('Play'),
       songPlayBg: songOn ? ink : acc, songPlayFg: songOn ? 'var(--color-bg)' : 'var(--acc-ink)',
       songCount: s.songs.length,
       songRows: libList.map(p => {
