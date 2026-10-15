@@ -3108,7 +3108,7 @@ const __ds_scope = {};
 <div style="padding:0 16px 20px"><div class="seg" style="display:flex">
 <sc-for list="{{ langOpts }}" as="lo" hint-placeholder-count="2"><label class="seg-opt" style="flex:1;padding:10px 8px;font-weight:600;background:{{ lo.bg }};color:{{ lo.fg }}"><input type="radio" name="lang" checked="{{ lo.checked }}" sc-camel-on-change="{{ lo.pick }}">{{ lo.label }}</label></sc-for>
 </div></div>
-<div style="padding:24px 16px 10px;border-top:2px solid var(--color-divider)"><h6 style="margin:0">{{ t.beatSound }}</h6><div style="font-size:12px;color:var(--muted);margin-top:4px">{{ t.drumCredit }}</div></div>
+<div style="padding:24px 16px 10px;border-top:2px solid var(--color-divider)"><h6 style="margin:0">{{ t.beatSound }}</h6><div style="font-size:12px;color:var(--muted);margin-top:4px">{{ t.sound3 }}</div><div style="font-size:12px;color:var(--muted);margin-top:4px">{{ t.drumCredit }}</div></div>
 <sc-for list="{{ soundOpts }}" as="o" hint-placeholder-count="4">
 <button sc-camel-on-click="{{ o.pick }}" aria-pressed="{{ o.on }}" style="all:unset;box-sizing:border-box;cursor:pointer;width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;border-top:2px solid var(--color-divider);min-height:60px;background:{{ o.bg }}">
 <span style="flex:none;width:20px;height:20px;border:2px solid {{ o.dotBd }};display:flex;align-items:center;justify-content:center;box-sizing:border-box"><span style="width:10px;height:10px;background:{{ o.dot }}"></span></span>
@@ -3256,12 +3256,15 @@ const fitStrum = (old, oldSub, n, sub) => Array.from({ length: n * sub }, (_, k)
 });
 const STRUM_NEXT = { D: 'U', U: '', '': 'D' };
 const QUICK = [[3, 4], [4, 4], [5, 4], [6, 8], [7, 8], [12, 8]];
-const fitAccents = (acc, n) => Array.from({ length: n }, (_, i) => acc[i] ?? (i === 0 ? 'accent' : 'normal'));
+const ACC_OK = { one: 1, accent: 1, normal: 1, mute: 1 };
+const ACC_NEXT = { one: 'accent', accent: 'normal', normal: 'mute', mute: 'one' };
+const fitAccents = (acc, n) => Array.from({ length: n }, (_, i) => ACC_OK[acc && acc[i]] ? acc[i] : (i === 0 ? 'one' : 'normal'));
+const promoteDownbeat = arr => (Array.isArray(arr) && arr.length && arr[0] === 'accent' && !arr.includes('one')) ? ['one'].concat(arr.slice(1)) : arr;
 const DEFAULTS = [
-  { id: 'p1', name: 'Blues shuffle', bpm: 72, beats: 12, den: 8, sub: 1, strum: ['D','','U','D','','U','D','','U','D','','U'], accents: fitAccents(['accent', 'normal', 'normal', 'accent', 'normal', 'normal', 'accent', 'normal', 'normal', 'accent', 'normal', 'normal'], 12) },
-  { id: 'p2', name: 'Rock straight', bpm: 120, beats: 4, den: 4, sub: 2, strum: ['D','','D','U','','U','D','U'], accents: ['accent', 'normal', 'accent', 'normal'] },
-  { id: 'p3', name: 'Waltz', bpm: 90, beats: 3, den: 4, sub: 1, accents: ['accent', 'normal', 'normal'] },
-  { id: 'p4', name: 'Odd-time solo', bpm: 140, beats: 7, den: 8, sub: 1, accents: ['accent', 'normal', 'accent', 'normal', 'accent', 'normal', 'normal'] },
+  { id: 'p1', name: 'Blues shuffle', bpm: 72, beats: 12, den: 8, sub: 1, strum: ['D','','U','D','','U','D','','U','D','','U'], accents: ['one', 'normal', 'normal', 'accent', 'normal', 'normal', 'accent', 'normal', 'normal', 'accent', 'normal', 'normal'] },
+  { id: 'p2', name: 'Rock straight', bpm: 120, beats: 4, den: 4, sub: 2, strum: ['D','','D','U','','U','D','U'], accents: ['one', 'normal', 'accent', 'normal'] },
+  { id: 'p3', name: 'Waltz', bpm: 90, beats: 3, den: 4, sub: 1, accents: ['one', 'normal', 'normal'] },
+  { id: 'p4', name: 'Odd-time solo', bpm: 140, beats: 7, den: 8, sub: 1, accents: ['one', 'normal', 'accent', 'normal', 'accent', 'normal', 'normal'] },
 ];
 const SET = 'tempo-metronome-settings-v1';
 const SONGS = 'tempo-metronome-songs-v1';
@@ -3282,22 +3285,36 @@ const refitSec = (sec, beats, sub, pbars, grid, den) => {
 const glyphOf = v => v === 'D' ? '↓' : v === 'U' ? '↑' : '–';
 const fmtLen = secs => Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
 const SOUNDS = [
-  { v: 'Kick / Snare', desc: 'Recorded kick on the accent, snare on the beats' },
-  { v: 'Rim / Hat', desc: 'Recorded side-stick on the accent, hi-hat on the beats' },
-  { v: 'Cowbell / Clave', desc: 'Recorded cowbell on the accent, clave on the beats' },
-  { v: 'Click', desc: 'Sharp digital click' }, { v: 'Woodblock', desc: 'Warm, wooden knock' }, { v: 'Beep', desc: 'Clean electronic tone' }, { v: 'Soft', desc: 'Gentle low tick for practice' },
-  { v: 'Dom / Da', desc: 'Deep drum on the accent, high tick on beats' }, { v: 'Kick / Hat', desc: 'Bass drum on the accent, hi-hat on beats' }, { v: 'Cowbell / Wood', desc: 'Bright bell on the accent, wood block on beats' }, { v: 'Beep High / Low', desc: 'High beep on the accent, low beep on beats' }, { v: 'Clap / Tick', desc: 'Hand clap on the accent, sharp tick on beats' }];
+  { v: 'Kick / Snare', desc: 'Cowbell on the 1, kick on accents, snare on the beats' },
+  { v: 'Rim / Hat', desc: 'Clave on the 1, side-stick on accents, hi-hat on the beats' },
+  { v: 'Cowbell / Clave', desc: 'Kick on the 1, cowbell on accents, clave on the beats' },
+  { v: 'Click', desc: 'High click on the 1, mid on accents, low on the beats' },
+  { v: 'Woodblock', desc: 'Three wooden knocks: the 1, the accent, the beat' },
+  { v: 'Beep', desc: 'High beep on the 1, mid on accents, low on the beats' },
+  { v: 'Soft', desc: 'Three soft ticks: the 1, the accent, the beat' },
+  { v: 'Dom / Da', desc: 'Low drum on the 1, dom on accents, da on the beats' },
+  { v: 'Kick / Hat', desc: 'Big kick on the 1, kick on accents, hi-hat on the beats' },
+  { v: 'Cowbell / Wood', desc: 'High bell on the 1, cowbell on accents, wood on the beats' },
+  { v: 'Beep High / Low', desc: 'Highest beep on the 1, high on accents, low on the beats' },
+  { v: 'Clap / Tick', desc: 'Big clap on the 1, clap on accents, tick on the beats' },
+];
 const KITS = {
-  'Kick / Snare': { accent: 'kick', normal: 'snare', sub: 'hat', g: { accent: 0.9, normal: 0.72, sub: 0.34 } },
-  'Rim / Hat': { accent: 'rim', normal: 'hat', sub: 'hat', g: { accent: 0.85, normal: 0.42, sub: 0.22 } },
-  'Cowbell / Clave': { accent: 'cow', normal: 'clave', sub: 'clave', g: { accent: 0.62, normal: 0.5, sub: 0.24 } },
+  'Kick / Snare': { one: 'cow', accent: 'kick', normal: 'snare', sub: 'hat', g: { one: 0.72, accent: 0.9, normal: 0.72, sub: 0.34 } },
+  'Rim / Hat': { one: 'clave', accent: 'rim', normal: 'hat', sub: 'hat', g: { one: 0.72, accent: 0.85, normal: 0.42, sub: 0.22 } },
+  'Cowbell / Clave': { one: 'kick', accent: 'cow', normal: 'clave', sub: 'clave', g: { one: 0.95, accent: 0.62, normal: 0.5, sub: 0.24 } },
 };
 const PAIRS = {
-  'Dom / Da': { accent: [{ t: 'drum', f: 330, f2: 120, d: 0.26, g: 0.9 }, { t: 'drum', w: 'triangle', f: 180, f2: 80, d: 0.32, g: 0.5 }], normal: { t: 'tone', w: 'triangle', f: 1600, f2: 1400, d: 0.05, g: 0.45 }, sub: { t: 'tone', w: 'triangle', f: 1200, d: 0.03, g: 0.18 } },
-  'Kick / Hat': { accent: [{ t: 'drum', f: 160, f2: 48, d: 0.36, g: 1 }, { t: 'drum', f: 280, f2: 110, d: 0.12, g: 0.45 }, { t: 'noise', ft: 'lowpass', ff: 3000, d: 0.015, g: 0.5 }], normal: { t: 'noise', ft: 'highpass', ff: 7000, d: 0.06, g: 0.55 }, sub: { t: 'noise', ft: 'highpass', ff: 8000, d: 0.03, g: 0.22 } },
-  'Cowbell / Wood': { accent: { t: 'bell', f: 560, d: 0.3, g: 0.55 }, normal: { t: 'tone', w: 'sine', f: 1000, f2: 760, d: 0.06, g: 0.55 }, sub: { t: 'tone', w: 'sine', f: 1300, f2: 1000, d: 0.04, g: 0.22 } },
-  'Beep High / Low': { accent: { t: 'tone', w: 'sine', f: 1760, d: 0.12, g: 0.5 }, normal: { t: 'tone', w: 'sine', f: 440, d: 0.09, g: 0.55 }, sub: { t: 'tone', w: 'sine', f: 440, d: 0.05, g: 0.2 } },
-  'Clap / Tick': { accent: { t: 'noise', ft: 'bandpass', ff: 1300, q: 1.2, n: 3, d: 0.14, g: 0.95 }, normal: { t: 'tone', w: 'square', f: 2600, d: 0.02, g: 0.25 }, sub: { t: 'tone', w: 'square', f: 2000, d: 0.015, g: 0.1 } },
+  'Dom / Da': { one: [{ t: 'drum', f: 200, f2: 48, d: 0.4, g: 1 }, { t: 'drum', w: 'triangle', f: 90, f2: 40, d: 0.42, g: 0.55 }], accent: [{ t: 'drum', f: 330, f2: 120, d: 0.26, g: 0.9 }, { t: 'drum', w: 'triangle', f: 180, f2: 80, d: 0.32, g: 0.5 }], normal: { t: 'tone', w: 'triangle', f: 1600, f2: 1400, d: 0.05, g: 0.45 }, sub: { t: 'tone', w: 'triangle', f: 1200, d: 0.03, g: 0.18 } },
+  'Kick / Hat': { one: [{ t: 'drum', f: 100, f2: 32, d: 0.46, g: 1 }, { t: 'noise', ft: 'lowpass', ff: 1600, d: 0.02, g: 0.35 }], accent: [{ t: 'drum', f: 160, f2: 48, d: 0.36, g: 1 }, { t: 'drum', f: 280, f2: 110, d: 0.12, g: 0.45 }, { t: 'noise', ft: 'lowpass', ff: 3000, d: 0.015, g: 0.5 }], normal: { t: 'noise', ft: 'highpass', ff: 7000, d: 0.06, g: 0.55 }, sub: { t: 'noise', ft: 'highpass', ff: 8000, d: 0.03, g: 0.22 } },
+  'Cowbell / Wood': { one: [{ t: 'bell', f: 880, d: 0.26, g: 0.48 }, { t: 'bell', f: 660, d: 0.32, g: 0.32 }], accent: { t: 'bell', f: 560, d: 0.3, g: 0.55 }, normal: { t: 'tone', w: 'sine', f: 1000, f2: 760, d: 0.06, g: 0.55 }, sub: { t: 'tone', w: 'sine', f: 1300, f2: 1000, d: 0.04, g: 0.22 } },
+  'Beep High / Low': { one: [{ t: 'tone', w: 'sine', f: 2637, d: 0.1, g: 0.42 }, { t: 'tone', w: 'sine', f: 2093, d: 0.12, g: 0.22 }], accent: { t: 'tone', w: 'sine', f: 1760, d: 0.12, g: 0.5 }, normal: { t: 'tone', w: 'sine', f: 440, d: 0.09, g: 0.55 }, sub: { t: 'tone', w: 'sine', f: 440, d: 0.05, g: 0.2 } },
+  'Clap / Tick': { one: [{ t: 'noise', ft: 'bandpass', ff: 1600, q: 0.9, n: 4, d: 0.18, g: 1 }, { t: 'drum', f: 160, f2: 55, d: 0.14, g: 0.45 }], accent: { t: 'noise', ft: 'bandpass', ff: 1300, q: 1.2, n: 3, d: 0.14, g: 0.95 }, normal: { t: 'tone', w: 'square', f: 2600, d: 0.02, g: 0.25 }, sub: { t: 'tone', w: 'square', f: 2000, d: 0.015, g: 0.1 } },
+};
+const playKind = (kind, _beat, subStep) => {
+  if (kind === 'mute') return 'mute';
+  if (subStep) return 'sub';
+  if (kind === 'one') return 'one';
+  return kind === 'accent' ? 'accent' : 'normal';
 };
 const parseChords = str => { const t = (str || '').trim().replace(/^\|+|\|+$/g, ''); if (!t.trim()) return []; return t.split('|').map(x => x.trim().split(/\s+/).filter(Boolean).map(normChord)); };
 const chordAt = (toks, b, beats) => { if (!toks.length) return ''; let k = Math.floor(b * toks.length / beats); while (k >= 0 && toks[k] === '.') k--; return k >= 0 ? toks[k] : ''; };
@@ -3522,7 +3539,7 @@ const fixSec = x => {
   const pb = clampI(x.patternBars, 1, 4, 1), st = Array.isArray(x.strum) ? x.strum : [];
   const den = [2, 4, 8, 16].includes(+x.den) ? +x.den : 4;
   const rawAcc = Array.isArray(x.accents) ? x.accents : [];
-  const accents = fitAccents(rawAcc.slice(0, beats).map(a => ['accent', 'normal', 'mute'].includes(a) ? a : 'normal'), beats);
+  const accents = fitAccents(rawAcc.slice(0, beats).map(a => ACC_OK[a] ? a : 'normal'), beats);
   return { ...x, id: String(x.id || 's' + Math.random().toString(36).slice(2, 9)), name: String(x.name ?? ''), beats, den, sub, grid, patternBars: pb, repeat: clampI(x.repeat, 1, 64, 1),
     accents,
     strum: Array.from({ length: beats * grid * pb }, (_, k) => st[k] === 'D' || st[k] === 'U' ? st[k] : ''),
@@ -3538,14 +3555,14 @@ const fixPreset = p => {
   const beats = clampI(p.beats, 1, 16, 0); if (!beats) return null;
   const sub = SUBV.includes(+p.sub) ? +p.sub : 1, grid = SUBV.includes(+p.grid) && +p.grid % sub === 0 ? +p.grid : sub;
   return { ...p, id: String(p.id || 'p' + Date.now() + Math.random().toString(36).slice(2, 6)), name: String(p.name ?? ''), bpm: clampI(p.bpm, 30, 260, 120), beats, den: [2, 4, 8, 16].includes(+p.den) ? +p.den : 4, sub, grid,
-    accents: fitAccents((Array.isArray(p.accents) ? p.accents : []).slice(0, beats).map(a => ['accent', 'normal', 'mute'].includes(a) ? a : 'normal'), beats),
+    accents: fitAccents((Array.isArray(p.accents) ? p.accents : []).slice(0, beats).map(a => ACC_OK[a] ? a : 'normal'), beats),
     strum: Array.isArray(p.strum) && p.strum.length === beats * grid ? p.strum.map(v => v === 'D' || v === 'U' ? v : '') : undefined };
 };
 const LAYOUT = [
   { k: 'marking', label: 'Tempo name', desc: 'Largo, Andante, Allegro…' },
   { k: 'slider', label: 'Tempo slider', desc: 'Drag to set BPM' },
   { k: 'tap', label: 'Tap tempo', desc: 'Tap in time to set BPM' },
-  { k: 'beats', label: 'Beat accents', desc: 'Accent or mute each beat' },
+  { k: 'beats', label: 'Beat accents', desc: 'Tap a beat for the 1, an accent, a normal beat, or mute' },
   { k: 'strum', label: 'Strum pattern', desc: 'Down / up strokes under each beat' },
   { k: 'quick', label: 'Quick time signatures', desc: '3/4, 4/4, 6/8 and more' },
   { k: 'sub', label: 'Subdivision', desc: 'Quarters, 8ths, triplets, 16ths' },
@@ -3553,7 +3570,7 @@ const LAYOUT = [
 ];
 const ALL_ON = { trainer: true, strum: true, marking: true, slider: true, tap: true, beats: true, quick: true, sub: true };
 const ZH = {'Loop':'循环','Backup':'备份','Export your songs and beats to a file, or import a file from another device.':'把歌曲和节奏导出成文件，或从其他设备导入文件。','Export':'导出','Import':'导入','Backup file saved':'备份文件已保存','Not a valid backup file':'不是有效的备份文件','Plays once':'播放一次','Looping song':'歌曲循环中',"New song":"新歌曲","Save":"保存","hold ±10":"长按 ±10","Tap":"点拍","Beats · tap to accent":"拍子 · 点按设重音","Strum · tap to cycle ↓ down, ↑ up, – rest":"扫弦 · 点按切换 ↓ 下、↑ 上、– 休止","Clear":"清除","Time signature":"拍号","Subdivision":"细分","Song name":"歌曲名称","e.g. Campfire song":"例如：营火之歌","Sections":"段落","Bars":"小节","Length":"时长","Sections · tap to edit":"段落 · 点按编辑","Count-in: 1 bar":"预备拍：1 小节","bars":"小节","Section name":"段落名称","e.g. Chorus":"例如：副歌","Tap a box to cycle ↓ down, ↑ up, – rest":"点按方格切换 ↓ 下、↑ 上、– 休止","Add section":"添加段落","Songs":"歌曲","Open":"已打开","Saved beats":"已保存的节奏","Loaded":"已载入","Nothing saved yet":"还没有保存","Set a tempo and time signature, then tap Save on the metronome.":"先设定速度和拍号，然后在节拍器页点按“保存”。","Beat sound":"节拍音色","Display":"显示","Metronome page":"节拍器页面","Reset page layout":"重置页面布局","Metronome":"节拍器","Song":"歌曲","Library":"曲库","Settings":"设置","Save beat":"保存节奏","Tempo":"速度","Time":"拍号","Feel":"律动","Name":"名称","e.g. Verse riff":"例如：主歌节奏","Cancel":"取消","Present mode":"演示模式","P present · Space start/stop · ↑↓ tempo (Shift ±10)":"P 演示 · 空格 开始/停止 · ↑↓ 速度（Shift ±10）","Language":"语言","Beat":"拍","Accent":"重音","Mute":"静音","accent":"重音","mute":"静音","Largo":"广板","Adagio":"柔板","Andante":"行板","Moderato":"中板","Allegro":"快板","Presto":"急板","Quarter":"四分","8ths":"八分","Triplet":"三连音","16ths":"十六分","Count-in":"预备拍","Get ready":"准备","Next: ":"下一段：","Then: ":"接着：","End":"结束","Last bar of the song":"歌曲最后一小节","-bar pattern × ":" 小节节奏型 × ","Beats":"拍数","Pattern":"节奏型","Repeat":"重复"," bars":" 小节"," bar":" 小节","Strum pattern":"扫弦节奏","■ Stop":"■ 停止","▶ Loop":"▶ 循环","↑ Up":"↑ 上移","↓ Down":"↓ 下移","Copy":"复制","Delete":"删除","Play song":"播放歌曲","Stop · ":"停止 · ","Stop · looping ":"停止 · 循环 ","Stop · count-in":"停止 · 预备拍"," sections · ":" 段 · "," bars · ":" 小节 · ","Click":"咔哒","Woodblock":"木鱼","Beep":"蜂鸣","Soft":"轻柔","Sharp digital click":"清脆的电子咔哒声","Warm, wooden knock":"温暖的木质敲击声","Clean electronic tone":"干净的电子音","Gentle low tick for practice":"柔和低沉的练习滴答声","Selected":"已选择","Tap to hear":"点按试听","Flash on every beat":"每拍闪烁","Each beat box lights up as it plays":"播放时当前方格会亮起","Dark mode":"深色模式","Easier on the eyes on stage":"舞台上看起来更舒适","Tempo name":"速度术语","Largo, Andante, Allegro…":"广板、行板、快板…","Tempo slider":"速度滑块","Drag to set BPM":"拖动设置 BPM","Tap tempo":"点拍测速","Tap in time to set BPM":"跟着节奏点按来设置 BPM","Beat accents":"拍子重音","Accent or mute each beat":"为每一拍设重音或静音","Down / up strokes under each beat":"每拍下方的上下扫弦","Quick time signatures":"快捷拍号","3/4, 4/4, 6/8 and more":"3/4、4/4、6/8 等","Quarters, 8ths, triplets, 16ths":"四分、八分、三连音、十六分","Sound, display & page layout":"声音、显示与页面布局","Your songs, beats & tempos":"你的歌曲、节奏与速度"," · edited":" · 已修改","Unsaved beat":"未保存的节奏","Start":"开始","Update":"更新","Will overwrite":"将覆盖","Saves tempo, time signature, accents, subdivision and strum":"保存速度、拍号、重音、细分和扫弦","Song finished":"歌曲播放完毕","A song needs at least one section":"一首歌至少需要一个段落","Deleted":"已删除","Updated":"已更新","Page layout reset":"页面布局已重置","Untitled song":"未命名歌曲","Verse":"主歌","Section":"段落"," copy":" 副本"};
-const TK = {loop:'Loop',backup:'Backup',backupDesc:'Export your songs and beats to a file, or import a file from another device.',exportBtn:'Export',importBtn:'Import',"newSong":"New song","save":"Save","hold":"hold ±10","tap":"Tap","beatsTap":"Beats · tap to accent","strumHint":"Strum · tap to cycle ↓ down, ↑ up, – rest","clear":"Clear","timeSig":"Time signature","subdivision":"Subdivision","songName":"Song name","phSong":"e.g. Campfire song","sections":"Sections","bars":"Bars","length":"Length","secTap":"Sections · tap to edit","countIn":"Count-in: 1 bar","barsLower":"bars","secName":"Section name","phSec":"e.g. Chorus","boxHint":"Tap a box to cycle ↓ down, ↑ up, – rest","addSection":"Add section","songs":"Songs","open":"Open","savedBeats":"Saved beats","loaded":"Loaded","nothing":"Nothing saved yet","nothingDesc":"Set a tempo and time signature, then tap Save on the metronome.","beatSound":"Beat sound","display":"Display","metroPage":"Metronome page","resetLayout":"Reset page layout","tabMetro":"Metronome","tabSong":"Song","tabLib":"Library","tabSet":"Settings","saveBeat":"Save beat","tempo":"Tempo","time":"Time","feel":"Feel","name":"Name","phBeat":"e.g. Verse riff","cancel":"Cancel","present":"Present mode","keyHint":"P present · Space start/stop · ↑↓ tempo (Shift ±10)","language":"Language"};
+const TK = {loop:'Loop',backup:'Backup',backupDesc:'Export your songs and beats to a file, or import a file from another device.',exportBtn:'Export',importBtn:'Import',"newSong":"New song","save":"Save","hold":"hold ±10","tap":"Tap","beatsTap":"Beats · tap for 1, accent, or beat","strumHint":"Strum · tap to cycle ↓ down, ↑ up, – rest","clear":"Clear","timeSig":"Time signature","subdivision":"Subdivision","songName":"Song name","phSong":"e.g. Campfire song","sections":"Sections","bars":"Bars","length":"Length","secTap":"Sections · tap to edit","countIn":"Count-in: 1 bar","barsLower":"bars","secName":"Section name","phSec":"e.g. Chorus","boxHint":"Tap a box to cycle ↓ down, ↑ up, – rest","addSection":"Add section","songs":"Songs","open":"Open","savedBeats":"Saved beats","loaded":"Loaded","nothing":"Nothing saved yet","nothingDesc":"Set a tempo and time signature, then tap Save on the metronome.","beatSound":"Beat sound","display":"Display","metroPage":"Metronome page","resetLayout":"Reset page layout","tabMetro":"Metronome","tabSong":"Song","tabLib":"Library","tabSet":"Settings","saveBeat":"Save beat","tempo":"Tempo","time":"Time","feel":"Feel","name":"Name","phBeat":"e.g. Verse riff","cancel":"Cancel","present":"Present mode","keyHint":"P present · Space start/stop · ↑↓ tempo (Shift ±10)","language":"Language"};
 Object.assign(ZH, { 'Strum grid': '扫弦细分', 'Strum': '扫弦', 'What you play. The click stays on the subdivision.': '你弹的格子。节拍声仍按“细分”播放。' });
 Object.assign(TK, { strumGrid: 'Strum grid', gridHint: 'What you play. The click stays on the subdivision.' });
 Object.assign(ZH, { 'Dom / Da': '咚 / 哒', 'Kick / Hat': '底鼓 / 镲', 'Cowbell / Wood': '牛铃 / 木鱼', 'Beep High / Low': '哔 高 / 低', 'Clap / Tick': '拍手 / 嗒',
@@ -3580,6 +3597,20 @@ Object.assign(TK, { binTitle: 'Recycle bin', binEmpty: 'Empty bin', restore: 'Re
 Object.assign(ZH, { 'Use a beat': '套用节奏', 'Use a pattern': '套用节奏型', 'This metronome': '当前节拍器', 'Copies time, accents, subdivision, strum and tempo onto this section. Heard the next time you press play.': '把拍号、重音、细分、扫弦和速度套到这个段落。下次按播放才会听到。', 'Copies time, accents, subdivision and strum. The song tempo stays the same.': '套用拍号、重音、细分和扫弦。歌曲速度保持不变。', 'Guitar strum': '吉他扫弦', 'Play the chords and strum pattern instead of the click.': '按和弦和扫弦节奏出声。关掉就是节拍器。', 'Play guitar': '播放吉他', 'Steel-string sample: FluidR3 GM, CC BY 3.0.': '钢弦采样：FluidR3 GM，CC BY 3.0。', 'Using “': '已套用“', ' · plays on the next start': ' · 下次播放生效', 'Strum patterns': '扫弦节奏型', 'Save pattern': '保存节奏型', 'Save as new': '另存为', 'Save': '保存', 'Replace': '替换', 'Saves time signature, accents, subdivision and strum. Tempo is not included.': '保存拍号、重音、细分和扫弦。不包含速度。', 'Replace updates the open pattern. Save as adds a new one. Tempo is not included.': '替换会改掉当前打开的节奏型。另存为会新增一个。不包含速度。', 'Set a time signature and strum, then tap Save.': '设定拍号和扫弦，然后点保存。', 'Your songs and strum patterns': '你的歌曲和扫弦节奏型', 'Unsaved pattern': '未保存的节奏型', 'That name is already used': '这个名称已经有了', 'Pattern': '节奏型' });
 Object.assign(TK, { useBeat: 'Use a pattern', useBeatHint: 'Copies time, accents, subdivision and strum. The song tempo stays the same.', thisMetro: 'This metronome', guitar: 'Guitar strum', guitarDesc: 'Play the chords and strum pattern instead of the click.', guitarCredit: 'Steel-string sample: FluidR3 GM, CC BY 3.0.', savedBeats: 'Strum patterns', saveBeat: 'Save pattern', nothingDesc: 'Set a time signature and strum, then tap Save.', saveAs: 'Save as new', replace: 'Replace' });
 Object.assign(ZH, { 'Kick / Snare': '底鼓 / 军鼓', 'Rim / Hat': '边击 / 踩镲', 'Cowbell / Clave': '牛铃 / 响棒', 'Recorded kick on the accent, snare on the beats': '重音是采样底鼓，其他拍是军鼓', 'Recorded side-stick on the accent, hi-hat on the beats': '重音是鼓边，其他拍是踩镲', 'Recorded cowbell on the accent, clave on the beats': '重音是牛铃，其他拍是响棒', 'Recorded drums in this list: FluidR3 GM, CC BY 3.0.': '列表里的鼓声是采样：FluidR3 GM，CC BY 3.0。' });
+Object.assign(ZH, { 'First': '第一拍', 'first': '第一拍', '1': '1', 'The 1, an accent, and a normal beat each have their own sound.': '第一拍、重音、普通拍，各是一种声音。', 'Beats · tap for 1, accent, or beat': '拍子 · 点按切换第一拍、重音或普通拍', 'Tap a beat for the 1, an accent, a normal beat, or mute': '每一拍可以设成第一拍、重音、普通拍或静音',
+  'Cowbell on the 1, kick on accents, snare on the beats': '第一拍是牛铃，重音是底鼓，其他拍是军鼓',
+  'Clave on the 1, side-stick on accents, hi-hat on the beats': '第一拍是响棒，重音是鼓边，其他拍是踩镲',
+  'Kick on the 1, cowbell on accents, clave on the beats': '第一拍是底鼓，重音是牛铃，其他拍是响棒',
+  'High click on the 1, mid on accents, low on the beats': '第一拍高音，重音中音，其他拍低音',
+  'Three wooden knocks: the 1, the accent, the beat': '三种木鱼声：第一拍、重音、普通拍',
+  'High beep on the 1, mid on accents, low on the beats': '第一拍高音哔，重音中音，其他拍低音',
+  'Three soft ticks: the 1, the accent, the beat': '三种轻柔声：第一拍、重音、普通拍',
+  'Low drum on the 1, dom on accents, da on the beats': '第一拍是低鼓，重音是咚，其他拍是哒',
+  'Big kick on the 1, kick on accents, hi-hat on the beats': '第一拍是大底鼓，重音是底鼓，其他拍是踩镲',
+  'High bell on the 1, cowbell on accents, wood on the beats': '第一拍是高音铃，重音是牛铃，其他拍是木鱼',
+  'Highest beep on the 1, high on accents, low on the beats': '第一拍最高音，重音高音，其他拍低音',
+  'Big clap on the 1, clap on accents, tick on the beats': '第一拍是大声拍手，重音是拍手，其他拍是嗒' });
+Object.assign(TK, { sound3: 'The 1, an accent, and a normal beat each have their own sound.', drumCredit: 'Recorded drums in this list: FluidR3 GM, CC BY 3.0.' });
 Object.assign(ZH, { 'Play': '播放', 'Stop': '停止', 'Guitar': '吉他', 'Tick a section to practice it. Leave them all off to play the whole song.': '勾选段落来练习。全部不勾就是播放整首歌。', 'Practice: ': '练习：', 'Practice ': '练习 ', 'Stop practicing ': '取消练习 ' });
 Object.assign(TK, { play: 'Play', stop: 'Stop', guitarShort: 'Guitar', pracHint: 'Tick a section to practice it. Leave them all off to play the whole song.' });
 const marking = b => b < 60 ? 'Largo' : b < 76 ? 'Adagio' : b < 108 ? 'Andante' : b < 120 ? 'Moderato' : b < 168 ? 'Allegro' : 'Presto';
@@ -3599,9 +3630,19 @@ class Component extends DCLogic {
     let st = {};
     try { st = JSON.parse(localStorage.getItem(SET) || '{}') || {}; } catch (e) {}
     if (!st.firstUse) { st.firstUse = Date.now(); lsSet(SET, JSON.stringify(st)); }
+    if (!st.acc3) {
+      if (Array.isArray(cur.accents)) cur.accents = promoteDownbeat(cur.accents);
+      presets = presets.map(p => ({ ...p, accents: promoteDownbeat(p.accents) }));
+      sg.songs = sg.songs.map(song => ({ ...song, sections: song.sections.map(sec => ({ ...sec, accents: promoteDownbeat(sec.accents) })) }));
+      if (Array.isArray(cur.accents)) lsSet(CUR, JSON.stringify({ bpm: cur.bpm, beats: cur.beats, den: cur.den, sub: cur.sub, grid: cur.grid, accents: cur.accents, strum: cur.strum, presetId: cur.presetId }));
+      lsSet(KEY, JSON.stringify(presets));
+      lsSet(SONGS, JSON.stringify({ songs: sg.songs, songId: sg.songId, sets: sg.sets, setId: sg.setId, bin: sg.bin }));
+      st.acc3 = true;
+      lsSet(SET, JSON.stringify(st));
+    }
     this.state = {
       bpm: cur.bpm ?? 120, beats: cur.beats ?? 4, den: cur.den ?? 4, sub: cur.sub ?? 1, grid: cur.grid ?? cur.sub ?? 1,
-      accents: cur.accents ?? ['accent', 'normal', 'normal', 'normal'], strum: cur.strum ?? fitStrum(null, 1, cur.beats ?? 4, cur.grid ?? cur.sub ?? 1), presetId: cur.presetId ?? null,
+      accents: cur.accents ?? ['one', 'normal', 'normal', 'normal'], strum: cur.strum ?? fitStrum(null, 1, cur.beats ?? 4, cur.grid ?? cur.sub ?? 1), presetId: cur.presetId ?? null,
       playing: false, active: -1, dark: st.dark ?? false, songLoop: st.songLoop ?? false, guitar: st.guitar ?? false, color: OLD_COLOR[st.color] || st.color || 'Teal', lang: st.lang ?? ((navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en'), sound: st.sound ?? 'Click', flashOn: st.flashOn ?? true, show: { ...ALL_ON, ...(st.show || {}) }, pulse: null, screen: 'metronome', songs: sg.songs, songId: sg.songId, secSel: -1, prac: {}, pracPlay: null, songPos: -1, mode: null, presets, dialog: false, draftName: '', toast: '', kd: null, imp: null, kSave: false, setlist: sg.setlist || [], sets: sg.sets, setId: sg.setId, bin: Array.isArray(sg.bin) ? sg.bin.filter(b => b && b.item && ['song', 'preset', 'set'].includes(b.type) && Date.now() - (b.at || 0) < 30 * 864e5) : [], binOpen: false, libOpen: { set: st.libOpen?.set !== false, song: st.libOpen?.song !== false, beat: st.libOpen?.beat !== false }, trainer: { on: false, step: 2, every: 4, target: 140, ...(st.trainer || {}) }, lyrScale: st.lyrScale ?? 1, lastBackup: st.lastBackup ?? null, firstUse: st.firstUse, bkSnooze: st.bkSnooze ?? 0, libQ: '', libSort: 'recent', undo: null,
     };
     this.taps = [];
@@ -3611,7 +3652,7 @@ class Component extends DCLogic {
     const s = this.state, prev = this._prevState || {};
     this._prevState = s;
     if (['dark', 'sound', 'flashOn', 'show', 'lang', 'songLoop', 'guitar', 'color', 'trainer', 'lyrScale', 'lastBackup', 'bkSnooze', 'libOpen'].some(k => prev[k] !== s[k]))
-      lsSet(SET, JSON.stringify({ color: s.color, songLoop: s.songLoop, guitar: s.guitar, lang: s.lang, dark: s.dark, sound: s.sound, flashOn: s.flashOn, show: s.show, trainer: s.trainer, lyrScale: s.lyrScale, lastBackup: s.lastBackup, firstUse: s.firstUse, bkSnooze: s.bkSnooze, libOpen: s.libOpen }));
+      lsSet(SET, JSON.stringify({ color: s.color, songLoop: s.songLoop, guitar: s.guitar, lang: s.lang, dark: s.dark, sound: s.sound, flashOn: s.flashOn, show: s.show, trainer: s.trainer, lyrScale: s.lyrScale, lastBackup: s.lastBackup, firstUse: s.firstUse, bkSnooze: s.bkSnooze, libOpen: s.libOpen, acc3: true }));
     if (prev.songs !== s.songs || prev.songId !== s.songId || prev.setlist !== s.setlist || prev.sets !== s.sets || prev.setId !== s.setId || prev.bin !== s.bin) lsSet(SONGS, JSON.stringify({ songs: s.songs, songId: s.songId, sets: this.allSets(s), setId: s.setId, bin: s.bin }));
     if (prev.presets !== s.presets) lsSet(KEY, JSON.stringify(s.presets));
     if (['bpm', 'beats', 'den', 'sub', 'grid', 'accents', 'strum', 'presetId'].some(k => prev[k] !== s[k]))
@@ -3657,8 +3698,7 @@ class Component extends DCLogic {
   cycleStrum(k) { this.setState(s => ({ strum: s.strum.map((x, i) => i === k ? STRUM_NEXT[x || ''] : x) })); }
   setSig(n, d) { this.setState(s => ({ beats: n, den: d, accents: fitAccents(s.accents.slice(0, 1), n), strum: fitStrum(s.strum, s.grid, n, s.grid) })); }
   cycle(i) {
-    const order = { accent: 'normal', normal: 'mute', mute: 'accent' };
-    this.setState(s => ({ accents: s.accents.map((a, j) => j === i ? order[a] : a) }));
+    this.setState(s => ({ accents: s.accents.map((a, j) => j === i ? (ACC_NEXT[a] || 'normal') : a) }));
   }
   bump(d, target) {
     if (target === 'song') { const cur = this.curSong(); this.updSong(x => ({ ...x, bpm: Math.max(30, Math.min(260, cur.bpm + d)) })); }
@@ -3731,7 +3771,8 @@ class Component extends DCLogic {
     if (!f || !list.length) return ev;
     const facc = fitAccents(f.accents || [], f.beats);
     for (let b = 0; b < f.beats; b++) {
-      const kind = facc[b] || 'normal';
+      const ak = facc[b] || 'normal';
+      const kind = playKind(ak, b, false);
       ev.push({ ci: true, beat: b, j: 0, sub: 1, kind, click: kind !== 'mute', stroke: '' });
     }
     this.loopStart = ev.length;
@@ -3748,7 +3789,7 @@ class Component extends DCLogic {
           const ak = accs[b] || 'normal';
           for (let j = 0; j < g; j++) {
             const stroke = (sec.strum && sec.strum[pb * sec.beats * g + b * g + j]) || '';
-            ev.push({ sec: si, bar, pb, beat: b, j, sub: g, chord: last, stroke, click: ak !== 'mute' && (j * sec.sub) % g === 0, kind: ak === 'mute' ? 'mute' : (j ? 'sub' : ak) });
+            ev.push({ sec: si, bar, pb, beat: b, j, sub: g, chord: last, stroke, click: ak !== 'mute' && (j * sec.sub) % g === 0, kind: playKind(ak, b, j) });
           }
         }
       }
@@ -3832,7 +3873,7 @@ class Component extends DCLogic {
       const e = this.ev[this.ei], idx = this.ei, late = this.next < c.currentTime - 0.02;
       if (!late) {
         if (this.state.guitar) {
-          if (e.ci) { if (e.click !== false) this.chuck(this.next, e.kind === 'accent' ? 0.42 : 0.24, 'D'); }
+          if (e.ci) { if (e.click !== false) this.chuck(this.next, e.kind === 'one' ? 0.55 : e.kind === 'accent' ? 0.42 : 0.24, 'D'); }
           else if (e.stroke === 'D' || e.stroke === 'U') this.strumGuitar(this.next, e.chord, e.stroke);
         } else if (e.click !== false) this.click(this.next, e.kind);
       }
@@ -3851,8 +3892,7 @@ class Component extends DCLogic {
   updSec(i, fn) { this.updSong(song => ({ ...song, sections: song.sections.map((x, j) => j === i ? fn(x) : x) })); }
   cycleSecStrum(i, k) { this.updSec(i, x => ({ ...x, strum: x.strum.map((v, n) => n === k ? STRUM_NEXT[v || ''] : v) })); }
   cycleSecAccent(i, b) {
-    const order = { accent: 'normal', normal: 'mute', mute: 'accent' };
-    this.updSec(i, x => ({ ...x, accents: fitAccents(x.accents, x.beats).map((a, j) => j === b ? (order[a] || 'normal') : a) }));
+    this.updSec(i, x => ({ ...x, accents: fitAccents(x.accents, x.beats).map((a, j) => j === b ? (ACC_NEXT[a] || 'normal') : a) }));
   }
   setSecSig(i, n, d) {
     this.updSec(i, x => refitSec({ ...x, den: d, accents: fitAccents((x.accents || []).slice(0, 1), n) }, n, x.sub, x.patternBars, gOf(x), d));
@@ -3995,8 +4035,8 @@ class Component extends DCLogic {
     let guard = 0;
     while (this.next < c.currentTime + 0.25 && guard++ < 24) {
       const t = this.tick % total, beat = Math.floor(t / g), st = t % g;
-      const kind = s.accents[beat] || 'normal';
-      if (kind !== 'mute' && (st * s.sub) % g === 0) this.click(this.next, st ? 'sub' : kind);
+      const raw = s.accents[beat] || 'normal';
+      if (raw !== 'mute' && (st * s.sub) % g === 0) this.click(this.next, playKind(raw, beat, st));
       this.queueVis(this.next, { active: beat, activeSub: st });
       this.next += 60 / s.bpm / g;
       this.tick = (t + 1) % total;
@@ -4006,13 +4046,13 @@ class Component extends DCLogic {
   click(time, kind) {
     const c = this.ctx, snd = this.state.sound;
     if (KITS[snd]) { this.hitKit(time, KITS[snd], kind); return; }
-    if (PAIRS[snd]) { const v = PAIRS[snd][kind]; (Array.isArray(v) ? v : [v]).forEach(x => this.voice(time, x)); return; }
-    const base = snd === 'Woodblock' ? { accent: 1200, normal: 800, sub: 600 } : snd === 'Beep' ? { accent: 1760, normal: 880, sub: 660 } : snd === 'Soft' ? { accent: 900, normal: 620, sub: 480 } : { accent: 2000, normal: 1300, sub: 900 };
-    const gainV = kind === 'accent' ? 0.9 : kind === 'sub' ? 0.25 : 0.55;
-    const len = snd === 'Beep' ? 0.08 : snd === 'Soft' ? 0.05 : 0.035;
+    if (PAIRS[snd]) { const v = PAIRS[snd][kind] || PAIRS[snd].normal; (Array.isArray(v) ? v : [v]).forEach(x => this.voice(time, x)); return; }
+    const base = snd === 'Woodblock' ? { one: 1800, accent: 1200, normal: 800, sub: 600 } : snd === 'Beep' ? { one: 2637, accent: 1760, normal: 880, sub: 660 } : snd === 'Soft' ? { one: 1319, accent: 900, normal: 620, sub: 480 } : { one: 2637, accent: 2000, normal: 1300, sub: 900 };
+    const gainV = kind === 'one' ? 1 : kind === 'accent' ? 0.85 : kind === 'sub' ? 0.25 : 0.55;
+    const len = snd === 'Beep' ? (kind === 'one' ? 0.11 : 0.08) : snd === 'Soft' ? 0.05 : (kind === 'one' ? 0.05 : 0.035);
     const o = c.createOscillator(), g = c.createGain();
     o.type = snd === 'Woodblock' ? 'triangle' : snd === 'Beep' || snd === 'Soft' ? 'sine' : 'square';
-    o.frequency.setValueAtTime(base[kind], time);
+    o.frequency.setValueAtTime(base[kind] || base.normal, time);
     g.gain.setValueAtTime(0.0001, time);
     g.gain.exponentialRampToValueAtTime(gainV * 0.4, time + 0.002);
     g.gain.exponentialRampToValueAtTime(0.0001, time + len);
@@ -4081,7 +4121,7 @@ class Component extends DCLogic {
   hitKit(time, kit, kind) {
     const id = kit[kind] || kit.normal;
     const g = (kit.g && kit.g[kind]) || 0.5;
-    if (!this.hitDrum(time, id, g)) this.voice(time, { t: 'tone', w: 'sine', f: kind === 'accent' ? 160 : 900, d: 0.06, g: 0.35 });
+    if (!this.hitDrum(time, id, g)) this.voice(time, { t: 'tone', w: 'sine', f: kind === 'one' ? 120 : kind === 'accent' ? 160 : 900, d: 0.06, g: 0.35 });
   }
   preview(v) {
     const play = () => {
@@ -4089,7 +4129,7 @@ class Component extends DCLogic {
         const AC = window.AudioContext || window.webkitAudioContext;
         this.ctx = this.ctx || new AC(); this.ctx.resume();
         const t = this.ctx.currentTime + 0.02;
-        this.click(t, 'accent'); this.click(t + 0.28, 'normal');
+        this.click(t, 'one'); this.click(t + 0.26, 'accent'); this.click(t + 0.52, 'normal');
       });
     };
     if (KITS[v]) this.loadDrums().then(play); else play();
@@ -4273,7 +4313,8 @@ class Component extends DCLogic {
       const gs = s.grid || s.sub;
       const subs = subLabels.map((label, j) => { const lit = here && s.activeSub === (j + 1) * gs / s.sub && a !== 'mute'; return { label, bg: lit ? 'var(--flash)' : 'transparent', fg: lit ? 'var(--flash-ink)' : 'var(--muted)', bd: lit ? 'var(--flash)' : 'var(--color-divider)' }; });
       let bg = 'var(--color-surface)', fg = ink, border = 'var(--color-divider)', word = 'Beat';
-      if (a === 'accent') { bg = on ? 'var(--acc-strong)' : acc; fg = 'var(--acc-ink)'; border = on ? 'var(--acc-strong)' : acc; word = 'Accent'; }
+      if (a === 'one') { bg = on ? 'var(--flash)' : ink; fg = on ? 'var(--flash-ink)' : 'var(--color-bg)'; border = on ? 'var(--flash)' : ink; word = '1'; }
+      else if (a === 'accent') { bg = on ? 'var(--acc-strong)' : acc; fg = 'var(--acc-ink)'; border = on ? 'var(--acc-strong)' : acc; word = 'Accent'; }
       else if (a === 'normal') { if (on) { bg = 'var(--flash)'; fg = 'var(--flash-ink)'; border = 'var(--flash)'; } }
       else { bg = on ? 'var(--color-surface)' : 'transparent'; fg = s.dark ? 'var(--color-neutral-400)' : 'var(--color-neutral-600)'; border = s.dark ? 'var(--color-neutral-600)' : 'var(--color-neutral-400)'; word = 'Mute'; }
       const counts = [String(i + 1), ...(SUB_LABELS[gs] || [])];
@@ -4386,6 +4427,7 @@ class Component extends DCLogic {
             const g = gOf(sec), k = pb * sec.beats * g + b * g + j, v = sec.strum[k] || '';
             const lit = s.flashOn && !!ev && !ev.ci && ev.sec === si && ev.pb === pb && ev.beat === b && ev.j === j;
             const look = cellLook(lit, v);
+            if (!lit && j === 0 && ak === 'one') look.bd = ink;
             if (!lit && j === 0 && ak === 'accent') look.bd = acc;
             if (!lit && ak === 'mute') look.fg = 'var(--muted)';
             return { count, glyph: glyphOf(v), aria: count + ': ' + (v === 'D' ? 'down' : v === 'U' ? 'up' : 'rest'), ...look, cycle: editable ? () => this.cycleSecStrum(si, k) : null };
@@ -4401,6 +4443,7 @@ class Component extends DCLogic {
         npBeats: Array.from({ length: f.beats }, (_, b) => {
           const ak = (fitAccents(f.accents || [], f.beats)[b]) || 'normal';
           const lit = ev.beat === b, look = cellLook(lit, ak === 'mute' ? '' : 'x');
+          if (!lit && ak === 'one') look.bd = ink;
           if (!lit && ak === 'accent') look.bd = acc;
           return { cells: [{ count: '', glyph: ak === 'mute' ? '–' : String(b + 1), ...look }] };
         }) };
@@ -4467,11 +4510,12 @@ class Component extends DCLogic {
         sigLabel: sec.beats + '/' + (sec.den || 4),
         denOpts: [2, 4, 8, 16].map(d => { const on = (sec.den || 4) === d; return { label: String(d), checked: on, bg: on ? acc : 'transparent', fg: on ? 'var(--acc-ink)' : ink, pick: () => this.updSec(i, x => ({ ...x, den: d })) }; }),
         quickSigs: QUICK.map(([n, d]) => { const on = sec.beats === n && (sec.den || 4) === d; return { label: n + '/' + d, bg: on ? ink : 'transparent', fg: on ? 'var(--color-bg)' : ink, bd: on ? ink : 'var(--color-divider)', pick: () => this.setSecSig(i, n, d) }; }),
-        accLegend: fitAccents(sec.accents || [], sec.beats).filter(a => a === 'accent').length + ' ' + L('accent') + ' · ' + fitAccents(sec.accents || [], sec.beats).filter(a => a === 'mute').length + ' ' + L('mute'),
+        accLegend: (() => { const a = fitAccents(sec.accents || [], sec.beats); return a.filter(x => x === 'one').length + ' ' + L('first') + ' · ' + a.filter(x => x === 'accent').length + ' ' + L('accent') + ' · ' + a.filter(x => x === 'mute').length + ' ' + L('mute'); })(),
         accCols: colsFor(sec.beats),
         accCells: fitAccents(sec.accents || [], sec.beats).map((a, bi) => {
           let bg = 'var(--color-surface)', fg = ink, border = 'var(--color-divider)', word = 'Beat';
-          if (a === 'accent') { bg = acc; fg = 'var(--acc-ink)'; border = acc; word = 'Accent'; }
+          if (a === 'one') { bg = ink; fg = 'var(--color-bg)'; border = ink; word = '1'; }
+          else if (a === 'accent') { bg = acc; fg = 'var(--acc-ink)'; border = acc; word = 'Accent'; }
           else if (a === 'mute') { bg = 'transparent'; fg = s.dark ? 'var(--color-neutral-400)' : 'var(--color-neutral-600)'; border = s.dark ? 'var(--color-neutral-600)' : 'var(--color-neutral-400)'; word = 'Mute'; }
           return { n: bi + 1, word: L(word), bg, fg, border, aria: 'Beat ' + (bi + 1) + ': ' + word, cycle: () => this.cycleSecAccent(i, bi) };
         }),
@@ -4582,7 +4626,7 @@ class Component extends DCLogic {
       minusDown: () => this.holdStart(-1), plusDown: () => this.holdStart(1),
       holdEnd: () => this.holdEnd(), holdCancel: () => this.holdEnd(true), noMenu: e => e.preventDefault(), tap: () => this.tap(),
       beatCells, beatCols: `repeat(${cols}, minmax(0,1fr))`,
-      beatLegend: `${s.accents.filter(a => a === 'accent').length} ${L('accent')} · ${s.accents.filter(a => a === 'mute').length} ${L('mute')}`,
+      beatLegend: s.accents.filter(a => a === 'one').length + ' ' + L('first') + ' · ' + s.accents.filter(a => a === 'accent').length + ' ' + L('accent') + ' · ' + s.accents.filter(a => a === 'mute').length + ' ' + L('mute'),
       sigLabel: `${s.beats}/${s.den}`, subShort: sub.short,
       beatsDown: () => this.setBeats(s.beats - 1), beatsUp: () => this.setBeats(s.beats + 1),
       denOpts: [2, 4, 8, 16].map(d => ({ label: String(d), checked: s.den === d, bg: s.den === d ? acc : 'transparent', fg: s.den === d ? 'var(--acc-ink)' : ink, pick: () => this.setState({ den: d }) })),
@@ -4601,7 +4645,7 @@ class Component extends DCLogic {
         name: p.name,
         meta: `${p.beats}/${p.den} · ${subLab(p.sub)}` + (gOf(p) !== p.sub ? ' · ' + L('Strum') + ' ' + subLab(gOf(p)) : ''),
         isLoaded: p.id === s.presetId, bg: p.id === s.presetId ? 'var(--color-surface)' : 'transparent',
-        dots: fitAccents(p.accents, p.beats).map(a => ({ bg: a === 'accent' ? acc : a === 'normal' ? ink : 'transparent', bd: a === 'accent' ? acc : a === 'normal' ? ink : 'var(--color-neutral-500)' })),
+        dots: fitAccents(p.accents, p.beats).map(a => ({ bg: a === 'one' ? ink : a === 'accent' ? acc : 'transparent', bd: a === 'one' || a === 'normal' ? ink : a === 'accent' ? acc : 'var(--color-neutral-500)' })),
         load: () => this.load(p), remove: e => { e.stopPropagation(); this.remove(p); },
       })),
       noPresets: s.presets.length === 0,
