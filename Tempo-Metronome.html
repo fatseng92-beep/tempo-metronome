@@ -2893,10 +2893,16 @@ const __ds_scope = {};
 <span style="font-size:10px;font-weight:600;line-height:1;color:{{ u.cfg }}">{{ u.count }}</span>
 <span style="font-size:19px;font-weight:800;line-height:1">{{ u.glyph }}</span>
 </button>
-<sc-if value="{{ pluckOn }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ u.pCycle }}" aria-label="{{ u.pAria }}" style="width:100%;height:40px;padding:2px 0;border:1.5px solid {{ u.pBd }};background:{{ u.pBg }};color:{{ u.pFg }};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-family:var(--font-heading);border-radius:0">
+<sc-if value="{{ pluckOn }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:2px">
+<button sc-camel-on-click="{{ u.pCycle }}" aria-label="{{ u.pAria }}" style="width:100%;height:36px;padding:2px 0;border:1.5px solid {{ u.pBd }};background:{{ u.pBg }};color:{{ u.pFg }};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-family:var(--font-heading);border-radius:0">
 <span style="font-size:15px;font-weight:800;line-height:1">{{ u.pNum }}</span>
 <span style="font-size:9px;font-weight:700;line-height:1">{{ u.pName }}</span>
-</button></sc-if>
+</button>
+<button sc-camel-on-click="{{ u.qCycle }}" aria-label="{{ u.qAria }}" style="width:100%;height:36px;padding:2px 0;border:1.5px solid {{ u.qBd }};background:{{ u.qBg }};color:{{ u.qFg }};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-family:var(--font-heading);border-radius:0">
+<span style="font-size:15px;font-weight:800;line-height:1">{{ u.qNum }}</span>
+<span style="font-size:9px;font-weight:700;line-height:1">{{ u.qName }}</span>
+</button>
+</div></sc-if>
 </div></sc-for>
 </div></sc-for>
 </div>
@@ -3296,12 +3302,16 @@ const barsOf = sec => { const n = sec.beats * gOf(sec); return Array.from({ leng
 const refitSec = (sec, beats, sub, pbars, grid, den) => {
   const old = barsOf(sec), out = [], og = gOf(sec), g = grid ?? nextGrid(sec.sub, og, sub);
   for (let b = 0; b < pbars; b++) { const src = old[b] || old[old.length - 1]; out.push(...fitStrum(src, og, beats, g)); }
-  const n0 = sec.beats * og, pAll = Array.isArray(sec.pluck) ? sec.pluck : [];
-  const oldP = Array.from({ length: Math.max(1, sec.patternBars || 1) }, (_, b) => pAll.slice(b * n0, (b + 1) * n0));
-  const pout = [];
-  for (let b = 0; b < pbars; b++) pout.push(...fitPluck(oldP[b] || oldP[oldP.length - 1], og, beats, g));
+  const n0 = sec.beats * og;
+  const fitP = arr => {
+    const all = Array.isArray(arr) ? arr : [];
+    const oldP = Array.from({ length: Math.max(1, sec.patternBars || 1) }, (_, b) => all.slice(b * n0, (b + 1) * n0));
+    const pout = [];
+    for (let b = 0; b < pbars; b++) pout.push(...fitPluck(oldP[b] || oldP[oldP.length - 1], og, beats, g));
+    return pout;
+  };
   const d = den != null ? den : ([2, 4, 8, 16].includes(+sec.den) ? +sec.den : 4);
-  return { ...sec, beats, den: d, sub, grid: g, patternBars: pbars, strum: out, pluck: pout, accents: fitAccents(sec.accents || [], beats) };
+  return { ...sec, beats, den: d, sub, grid: g, patternBars: pbars, strum: out, pluck: fitP(sec.pluck), pluck2: fitP(sec.pluck2), accents: fitAccents(sec.accents || [], beats) };
 };
 const glyphOf = v => v === 'D' ? '↓' : v === 'U' ? '↑' : '–';
 const fmtLen = secs => Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
@@ -3561,11 +3571,12 @@ const fixSec = x => {
   const den = [2, 4, 8, 16].includes(+x.den) ? +x.den : 4;
   const rawAcc = Array.isArray(x.accents) ? x.accents : [];
   const accents = fitAccents(rawAcc.slice(0, beats).map(a => ACC_OK[a] ? a : 'normal'), beats);
-  const pk = Array.isArray(x.pluck) ? x.pluck : [];
+  const pk = Array.isArray(x.pluck) ? x.pluck : [], pk2 = Array.isArray(x.pluck2) ? x.pluck2 : [];
+  const cleanP = arr => Array.from({ length: beats * grid * pb }, (_, k) => PLUCK_OK[arr[k]] ? arr[k] : '');
   return { ...x, id: String(x.id || 's' + Math.random().toString(36).slice(2, 9)), name: String(x.name ?? ''), beats, den, sub, grid, patternBars: pb, repeat: clampI(x.repeat, 1, 64, 1),
     accents,
     strum: Array.from({ length: beats * grid * pb }, (_, k) => st[k] === 'D' || st[k] === 'U' ? st[k] : ''),
-    pluck: Array.from({ length: beats * grid * pb }, (_, k) => PLUCK_OK[pk[k]] ? pk[k] : ''),
+    pluck: cleanP(pk), pluck2: cleanP(pk2),
     chords: typeof x.chords === 'string' ? x.chords : '', lyrics: typeof x.lyrics === 'string' ? x.lyrics : '', bpl: clampI(x.bpl, 1, 8, 2) };
 };
 const fixSong = x => {
@@ -3636,8 +3647,8 @@ Object.assign(ZH, { 'First': '第一拍', 'first': '第一拍', '1': '1', 'The 1
 Object.assign(TK, { sound3: 'The 1, an accent, and a normal beat each have their own sound.', drumCredit: 'Recorded drums in this list: FluidR3 GM, CC BY 3.0.' });
 Object.assign(ZH, { 'Play': '播放', 'Stop': '停止', 'Guitar': '吉他', 'Tick a section to practice it. Leave them all off to play the whole song.': '勾选段落来练习。全部不勾就是播放整首歌。', 'Practice: ': '练习：', 'Practice ': '练习 ', 'Stop practicing ': '取消练习 ' });
 Object.assign(TK, { play: 'Play', stop: 'Stop', guitarShort: 'Guitar', pracHint: 'Tick a section to practice it. Leave them all off to play the whole song.' });
-Object.assign(TK, { pluck: 'Pluck', pluckHint: 'Pluck · tap a number to pick one string. 6E is the thick string, 1e is the thin string. A number is one string. An arrow still strums the whole chord.' });
-Object.assign(ZH, { 'Pluck': '拨弦', 'Pluck · tap a number to pick one string. 6E is the thick string, 1e is the thin string. A number is one string. An arrow still strums the whole chord.': '拨弦 · 点数字选一根弦。6E 是粗弦，1e 是细弦。数字是拨一根弦。箭头仍是扫整和弦。' });
+Object.assign(TK, { pluck: 'Pluck', pluckHint: 'Pluck · tap the top number, then the one under it. Two numbers on one beat play together. 6E is thick, 1e is thin.' });
+Object.assign(ZH, { 'Pluck': '拨弦', 'Pluck · tap the top number, then the one under it. Two numbers on one beat play together. 6E is thick, 1e is thin.': '拨弦 · 先点上面的数字，再点下面的。同一拍两个数字会一起响。6E 是粗弦，1e 是细弦。' });
 const marking = b => b < 60 ? 'Largo' : b < 76 ? 'Adagio' : b < 108 ? 'Andante' : b < 120 ? 'Moderato' : b < 168 ? 'Allegro' : 'Presto';
 
 class Component extends DCLogic {
@@ -3816,7 +3827,8 @@ class Component extends DCLogic {
             const idx = pb * sec.beats * g + b * g + j;
             const stroke = (sec.strum && sec.strum[idx]) || '';
             const pluck = (sec.pluck && sec.pluck[idx]) || '';
-            ev.push({ sec: si, bar, pb, beat: b, j, sub: g, chord: last, stroke, pluck, click: ak !== 'mute' && (j * sec.sub) % g === 0, kind: playKind(ak, b, j) });
+            const pluck2 = (sec.pluck2 && sec.pluck2[idx]) || '';
+            ev.push({ sec: si, bar, pb, beat: b, j, sub: g, chord: last, stroke, pluck, pluck2, click: ak !== 'mute' && (j * sec.sub) % g === 0, kind: playKind(ak, b, j) });
           }
         }
       }
@@ -3903,7 +3915,10 @@ class Component extends DCLogic {
           if (e.ci) { if (e.click !== false) this.chuck(this.next, e.kind === 'one' ? 0.55 : e.kind === 'accent' ? 0.42 : 0.24, 'D'); }
           else {
             if (e.stroke === 'D' || e.stroke === 'U') this.strumGuitar(this.next, e.chord, e.stroke);
-            if (this.state.pluck && PLUCK_OK[e.pluck]) this.pluckString(this.next, e.chord, e.pluck);
+            if (this.state.pluck) {
+              if (PLUCK_OK[e.pluck]) this.pluckString(this.next, e.chord, e.pluck);
+              if (PLUCK_OK[e.pluck2] && e.pluck2 !== e.pluck) this.pluckString(this.next, e.chord, e.pluck2);
+            }
           }
         } else if (e.click !== false) this.click(this.next, e.kind);
       }
@@ -3921,12 +3936,14 @@ class Component extends DCLogic {
   updSong(fn) { const id = this.curSong().id; this.setState(s => ({ songs: s.songs.map(x => x.id === id ? fn(x) : x) })); }
   updSec(i, fn) { this.updSong(song => ({ ...song, sections: song.sections.map((x, j) => j === i ? fn(x) : x) })); }
   cycleSecStrum(i, k) { this.updSec(i, x => ({ ...x, strum: x.strum.map((v, n) => n === k ? STRUM_NEXT[v || ''] : v) })); }
-  cycleSecPluck(i, k) {
+  cycleSecPluck(i, k, which) {
+    const key = which === 'pluck2' ? 'pluck2' : 'pluck';
     this.updSec(i, x => {
       const n = x.beats * gOf(x) * x.patternBars;
-      const p = Array.from({ length: n }, (_, j) => PLUCK_OK[x.pluck && x.pluck[j]] ? x.pluck[j] : '');
+      const src = x[key];
+      const p = Array.from({ length: n }, (_, j) => PLUCK_OK[src && src[j]] ? src[j] : '');
       p[k] = PLUCK_NEXT[p[k] || ''] || '';
-      return { ...x, pluck: p };
+      return { ...x, [key]: p };
     });
   }
   cycleSecAccent(i, b) {
@@ -3947,9 +3964,9 @@ class Component extends DCLogic {
       ...song,
       sections: song.sections.map((x, j) => {
         if (j !== i) return x;
-        const oldG = gOf(x), psrc = Array.isArray(x.pluck) ? x.pluck : [];
-        const pluck = Array.from({ length: x.patternBars }, (_, b) => fitPluck(psrc.slice(b * x.beats * oldG, (b + 1) * x.beats * oldG), oldG, beats, grid)).flat();
-        return { ...x, beats, den, sub, grid, accents: accents.slice(), strum: Array.from({ length: x.patternBars }, () => one).flat(), pluck };
+        const oldG = gOf(x);
+        const fitKeep = arr => Array.from({ length: x.patternBars }, (_, b) => fitPluck((Array.isArray(arr) ? arr : []).slice(b * x.beats * oldG, (b + 1) * x.beats * oldG), oldG, beats, grid)).flat();
+        return { ...x, beats, den, sub, grid, accents: accents.slice(), strum: Array.from({ length: x.patternBars }, () => one).flat(), pluck: fitKeep(x.pluck), pluck2: fitKeep(x.pluck2) };
       }),
     }));
     const nm = src.name || this.L('This metronome');
@@ -4031,7 +4048,7 @@ class Component extends DCLogic {
     this.setState({ secSel: i + d });
   }
   dupSec(i) {
-    this.updSong(song => { const a = song.sections.slice(); a.splice(i + 1, 0, { ...a[i], strum: a[i].strum.slice(), pluck: (a[i].pluck || []).slice(), accents: (a[i].accents || []).slice(), id: 's' + Date.now(), name: a[i].name + this.L(' copy') }); return { ...song, sections: a }; });
+    this.updSong(song => { const a = song.sections.slice(); a.splice(i + 1, 0, { ...a[i], strum: a[i].strum.slice(), pluck: (a[i].pluck || []).slice(), pluck2: (a[i].pluck2 || []).slice(), accents: (a[i].accents || []).slice(), id: 's' + Date.now(), name: a[i].name + this.L(' copy') }); return { ...song, sections: a }; });
     this.setState({ secSel: i + 1 });
   }
   delSec(i) {
@@ -4477,20 +4494,29 @@ class Component extends DCLogic {
         const ak = accs[b] || 'normal';
         return {
           cells: [String(b + 1)].concat(SUB_LABELS[gOf(sec)] || []).map((count, j) => {
-            const g = gOf(sec), k = pb * sec.beats * g + b * g + j, v = sec.strum[k] || '', p = (sec.pluck && sec.pluck[k]) || '';
+            const g = gOf(sec), k = pb * sec.beats * g + b * g + j, v = sec.strum[k] || '', p = (sec.pluck && sec.pluck[k]) || '', q = (sec.pluck2 && sec.pluck2[k]) || '';
             const lit = s.flashOn && !!ev && !ev.ci && ev.sec === si && ev.pb === pb && ev.beat === b && ev.j === j;
             const look = cellLook(lit, v);
             if (!lit && j === 0 && ak === 'one') look.bd = ink;
             if (!lit && j === 0 && ak === 'accent') look.bd = acc;
             if (!lit && ak === 'mute') look.fg = 'var(--muted)';
-            const pOn = !!PLUCK_OK[p];
-            const pLook = pOn
-              ? { pBg: lit ? 'var(--flash)' : ink, pFg: lit ? 'var(--flash-ink)' : 'var(--color-bg)', pBd: lit ? 'var(--flash)' : ink }
-              : (lit ? { pBg: 'var(--flash)', pFg: 'var(--flash-ink)', pBd: 'var(--flash)' } : { pBg: 'transparent', pFg: 'var(--muted)', pBd: 'var(--color-divider)' });
+            const box = raw => {
+              const on = !!PLUCK_OK[raw];
+              const skin = on
+                ? { bg: lit ? 'var(--flash)' : ink, fg: lit ? 'var(--flash-ink)' : 'var(--color-bg)', bd: lit ? 'var(--flash)' : ink }
+                : (lit ? { bg: 'var(--flash)', fg: 'var(--flash-ink)', bd: 'var(--flash)' } : { bg: 'transparent', fg: 'var(--muted)', bd: 'var(--color-divider)' });
+              return { on, num: on ? raw : '·', name: on ? PLUCK_NAME[raw] : '', mark: on ? raw + PLUCK_NAME[raw] : '', ...skin };
+            };
+            const A = box(p), B = box(q);
             return { count, glyph: glyphOf(v), aria: count + ': ' + (v === 'D' ? 'down' : v === 'U' ? 'up' : 'rest'), ...look,
-              pNum: pOn ? p : '·', pName: pOn ? PLUCK_NAME[p] : '', pMark: pOn ? p + PLUCK_NAME[p] : '', showP: !!(s.pluck && pOn),
-              pAria: 'Pluck ' + count + ': ' + (pOn ? 'string ' + p + ' ' + PLUCK_NAME[p] : 'none'), ...pLook,
-              cycle: editable ? () => this.cycleSecStrum(si, k) : null, pCycle: editable ? () => this.cycleSecPluck(si, k) : null };
+              pNum: A.num, pName: A.name, pBg: A.bg, pFg: A.fg, pBd: A.bd,
+              qNum: B.num, qName: B.name, qBg: B.bg, qFg: B.fg, qBd: B.bd,
+              pMark: [A.mark, B.mark].filter(Boolean).join('+'), showP: !!(s.pluck && (A.on || B.on)),
+              pAria: 'Pluck ' + count + ': ' + (A.on ? 'string ' + p + ' ' + PLUCK_NAME[p] : 'none'),
+              qAria: 'Second string ' + count + ': ' + (B.on ? 'string ' + q + ' ' + PLUCK_NAME[q] : 'none'),
+              cycle: editable ? () => this.cycleSecStrum(si, k) : null,
+              pCycle: editable ? () => this.cycleSecPluck(si, k) : null,
+              qCycle: editable ? () => this.cycleSecPluck(si, k, 'pluck2') : null };
           }),
         };
       });
@@ -4536,8 +4562,9 @@ class Component extends DCLogic {
       const first = barsOf(sec)[0] || [];
       const sg = gOf(sec);
       const preview = Array.from({ length: sec.beats }, (_, b) => first.slice(b * sg, (b + 1) * sg).map(v => v === 'D' ? '↓' : v === 'U' ? '↑' : '·').join('')).join(' ') + (sec.patternBars > 1 ? '  +' + (sec.patternBars - 1) : '');
-      const pFirst = (sec.pluck || []).slice(0, sec.beats * sg);
-      const pluckPrev = (s.pluck && pFirst.some(Boolean)) ? Array.from({ length: sec.beats }, (_, b) => pFirst.slice(b * sg, (b + 1) * sg).map(v => PLUCK_OK[v] ? v + PLUCK_NAME[v] : '·').join('')).join(' ') + (sec.patternBars > 1 ? '  +' : '') : '';
+      const pFirst = (sec.pluck || []).slice(0, sec.beats * sg), p2First = (sec.pluck2 || []).slice(0, sec.beats * sg);
+      const oneMark = (a, b) => { const A = PLUCK_OK[a] ? a + PLUCK_NAME[a] : '', B = PLUCK_OK[b] ? b + PLUCK_NAME[b] : ''; return A && B ? A + '+' + B : (A || B || '·'); };
+      const pluckPrev = (s.pluck && (pFirst.some(v => PLUCK_OK[v]) || p2First.some(v => PLUCK_OK[v]))) ? Array.from({ length: sec.beats }, (_, b) => pFirst.slice(b * sg, (b + 1) * sg).map((v, j) => oneMark(v, p2First[b * sg + j])).join('')).join(' ') + (sec.patternBars > 1 ? '  +' : '') : '';
       return {
         num: String(i + 1).padStart(2, '0'), name: sec.name, total,
         meta: sec.beats + '/' + (sec.den || 4) + ' · ' + subL + (sg !== sec.sub ? ' · ' + L('Strum') + ' ' + subLab(sg) : '') + ' · ' + (sec.patternBars > 1 ? sec.patternBars + L('-bar pattern × ') : '× ') + sec.repeat,
