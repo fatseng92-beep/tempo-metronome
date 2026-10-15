@@ -2810,6 +2810,7 @@ const __ds_scope = {};
 <span style="font-weight:800;font-size:16px;line-height:1.2">{{ r.name }}</span>
 <span style="font-size:12px;color:var(--muted)">{{ r.meta }}</span>
 <span style="font-size:15px;font-weight:800;letter-spacing:0.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.preview }}</span>
+<sc-if value="{{ r.pluckPrev }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;font-weight:800;letter-spacing:0.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.pluckPrev }}</span></sc-if>
 <sc-if value="{{ r.hasChords }}"><span style="font-size:14px;font-weight:800;color:var(--acc-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.chordLine }}</span></sc-if>
 </span>
 <span style="display:flex;flex-direction:column;align-items:flex-start"><span style="font-family:var(--font-heading);font-weight:800;font-size:22px;line-height:1">{{ r.total }}</span><span style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)">{{ t.barsLower }}</span></span>
@@ -2887,14 +2888,21 @@ const __ds_scope = {};
 <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">{{ bar.label }}</div>
 <div style="display:grid;grid-template-columns:{{ bar.cols }};gap:4px">
 <sc-for list="{{ bar.beats }}" as="bt"><div style="display:flex;gap:2px">
-<sc-for list="{{ bt.cells }}" as="u"><button sc-camel-on-click="{{ u.cycle }}" aria-label="{{ u.aria }}" style="flex:1;min-width:0;height:46px;padding:4px 0;border:1.5px solid {{ u.bd }};background:{{ u.bg }};color:{{ u.fg }};display:flex;flex-direction:column;align-items:center;justify-content:space-between;cursor:pointer;font-family:var(--font-heading);border-radius:0">
+<sc-for list="{{ bt.cells }}" as="u"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+<button sc-camel-on-click="{{ u.cycle }}" aria-label="{{ u.aria }}" style="width:100%;height:46px;padding:4px 0;border:1.5px solid {{ u.bd }};background:{{ u.bg }};color:{{ u.fg }};display:flex;flex-direction:column;align-items:center;justify-content:space-between;cursor:pointer;font-family:var(--font-heading);border-radius:0">
 <span style="font-size:10px;font-weight:600;line-height:1;color:{{ u.cfg }}">{{ u.count }}</span>
 <span style="font-size:19px;font-weight:800;line-height:1">{{ u.glyph }}</span>
-</button></sc-for>
+</button>
+<sc-if value="{{ pluckOn }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ u.pCycle }}" aria-label="{{ u.pAria }}" style="width:100%;height:40px;padding:2px 0;border:1.5px solid {{ u.pBd }};background:{{ u.pBg }};color:{{ u.pFg }};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-family:var(--font-heading);border-radius:0">
+<span style="font-size:15px;font-weight:800;line-height:1">{{ u.pNum }}</span>
+<span style="font-size:9px;font-weight:700;line-height:1">{{ u.pName }}</span>
+</button></sc-if>
+</div></sc-for>
 </div></sc-for>
 </div>
 </div></sc-for>
 <span style="font-size:12px;color:var(--muted)">{{ t.boxHint }}</span>
+<sc-if value="{{ pluckOn }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--muted)">{{ t.pluckHint }}</span></sc-if>
 <div class="field" style="margin:0">
 <label>{{ t.chords }}</label>
 <input class="input" value="{{ r.chords }}" sc-camel-on-change="{{ r.onChords }}" placeholder="{{ t.chordsPh }}" autocapitalize="off" autocomplete="off" spellcheck="false" style="min-height:44px;font-size:17px;font-weight:700">
@@ -2955,7 +2963,7 @@ const __ds_scope = {};
 </div>
 <div style="display:grid;grid-template-columns:{{ npCols }};gap:4px;padding:10px 16px 0">
 <sc-for list="{{ npBeats }}" as="b" hint-placeholder-count="4"><div style="display:flex;gap:2px">
-<sc-for list="{{ b.cells }}" as="u"><span style="flex:1;min-width:0;height:{{ npCellH }};border:2px solid {{ u.bd }};background:{{ u.bg }};color:{{ u.fg }};display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8px 0;box-sizing:border-box;font-family:var(--font-heading)"><span style="font-size:13px;font-weight:600;line-height:1;color:{{ u.cfg }}">{{ u.count }}</span><span style="font-size:{{ npGlyph }};font-weight:800;line-height:1">{{ u.glyph }}</span></span></sc-for>
+<sc-for list="{{ b.cells }}" as="u"><span style="flex:1;min-width:0;height:{{ npCellH }};border:2px solid {{ u.bd }};background:{{ u.bg }};color:{{ u.fg }};display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8px 0;box-sizing:border-box;font-family:var(--font-heading)"><span style="font-size:13px;font-weight:600;line-height:1;color:{{ u.cfg }}">{{ u.count }}</span><span style="font-size:{{ npGlyph }};font-weight:800;line-height:1">{{ u.glyph }}</span><sc-if value="{{ u.showP }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;font-weight:800;line-height:1">{{ u.pMark }}</span></sc-if></span></sc-for>
 </div></sc-for>
 </div>
 <div style="padding:10px 16px 12px;font-size:15px;font-weight:600;color:var(--muted)">{{ npNext }}</div>
@@ -2984,15 +2992,16 @@ const __ds_scope = {};
 </div>
 </div>
 </sc-if>
-<div style="flex:none;padding:0 16px 4px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px">
-<button sc-camel-on-click="{{ toggleGuitar }}" aria-pressed="{{ guitarOn }}" style="all:unset;box-sizing:border-box;cursor:pointer;min-width:0;height:48px;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 6px;font-weight:800;font-size:14px;background:{{ gBg }};color:{{ gFg }};border:2px solid {{ gBd }}"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>{{ t.guitarShort }}</button>
+<div style="flex:none;padding:0 16px 4px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px">
+<button sc-camel-on-click="{{ toggleGuitar }}" aria-pressed="{{ guitarOn }}" style="all:unset;box-sizing:border-box;cursor:pointer;min-width:0;height:48px;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 4px;font-weight:800;font-size:13px;background:{{ gBg }};color:{{ gFg }};border:2px solid {{ gBd }}"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>{{ t.guitarShort }}</button>
+<button sc-camel-on-click="{{ togglePluck }}" aria-pressed="{{ pluckOn }}" style="all:unset;box-sizing:border-box;cursor:pointer;min-width:0;height:48px;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 4px;font-weight:800;font-size:13px;background:{{ pBg }};color:{{ pFg }};border:2px solid {{ pBd }}"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M3 12h18"></path><path d="M3 18h18"></path><circle cx="15" cy="12" r="2.4" fill="currentColor" stroke="none"></circle></svg>{{ t.pluck }}</button>
 <button class="btn btn-primary" sc-camel-on-click="{{ toggleSong }}" style="min-width:0;height:48px;justify-content:center;font-size:14px;padding:0 6px;gap:6px;background:{{ songPlayBg }};color:{{ songPlayFg }};border-color:{{ songPlayBg }}">
 <sc-if value="{{ songOn }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14"></rect></svg></sc-if>
 <sc-if value="{{ songOff }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg></sc-if>
 {{ songPlayShort }}</button>
 <button class="btn btn-secondary" sc-camel-on-click="{{ toggleSongLoop }}" aria-pressed="{{ songLoop }}" style="min-width:0;height:48px;padding:0 6px;gap:6px;justify-content:center;font-size:14px;background:{{ loopBg }};color:{{ loopFg }};border-color:{{ loopBd }}"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>{{ t.loop }}</button>
 </div>
-<div style="padding:0 16px 10px;font-size:11px;color:var(--muted)">{{ t.guitarCredit }}</div>
+<div style="padding:0 16px 10px;font-size:11px;color:var(--muted)">{{ t.guitarCredit }}<sc-if value="{{ pluckOn }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;margin-top:4px">{{ t.pluckHint }}</div></sc-if></div>
 </sc-if>
 
 <sc-if value="{{ onLibrary }}" hint-placeholder-val="{{ false }}">
@@ -3255,6 +3264,14 @@ const fitStrum = (old, oldSub, n, sub) => Array.from({ length: n * sub }, (_, k)
   return j === 0 ? 'D' : '';
 });
 const STRUM_NEXT = { D: 'U', U: '', '': 'D' };
+const PLUCK_OK = { '6': 1, '5': 1, '4': 1, '3': 1, '2': 1, '1': 1 };
+const PLUCK_NEXT = { '': '6', '6': '5', '5': '4', '4': '3', '3': '2', '2': '1', '1': '' };
+const PLUCK_NAME = { '6': 'E', '5': 'A', '4': 'D', '3': 'G', '2': 'B', '1': 'e' };
+const fitPluck = (old, oldSub, n, sub) => Array.from({ length: n * sub }, (_, k) => {
+  const b = Math.floor(k / sub), j = k % sub;
+  if (old && oldSub && (j * oldSub) % sub === 0) { const v = old[b * oldSub + (j * oldSub) / sub]; if (PLUCK_OK[v]) return v; }
+  return '';
+});
 const QUICK = [[3, 4], [4, 4], [5, 4], [6, 8], [7, 8], [12, 8]];
 const ACC_OK = { one: 1, accent: 1, normal: 1, mute: 1 };
 const ACC_NEXT = { one: 'accent', accent: 'normal', normal: 'mute', mute: 'one' };
@@ -3271,7 +3288,7 @@ const SONGS = 'tempo-metronome-songs-v1';
 const S = str => str.split(' ').map(x => (x === 'D' || x === 'U') ? x : '');
 const mkSec = (name, beats, sub, patternBars, repeat, strum, den) => ({ id: 's' + Math.random().toString(36).slice(2, 9), name, beats, den: den || 4, sub, patternBars, repeat, accents: fitAccents([], beats), strum: strum || fitStrum(null, 1, beats, sub).concat(patternBars > 1 ? fitStrum(null, 1, beats * (patternBars - 1), sub) : []) });
 const DEFAULT_SONG = () => ({ id: 'song1', name: 'My first song', bpm: 90, sections: [
-  { ...mkSec('Verse', 4, 1, 1, 4, S('D D D D')), chords: 'G | D | Em | C', lyrics: '[G]Here comes the first [D]line\n[Em]Chords sit above the [C]words', bpl: 2 },
+  { ...mkSec('Verse', 4, 1, 1, 4, S('D D D D')), chords: 'G | D | Em | C', lyrics: '[G]Here comes the first [D]line\n[Em]Chords sit above the [C]words', bpl: 2, pluck: ['6', '', '4', ''] },
   { ...mkSec('Pre-chorus', 4, 2, 1, 2, S('D U D U D U D U')), chords: 'Am | C D' },
   { ...mkSec('Chorus', 4, 2, 2, 1, S('D U D U D U D U D - D U - U D U')), chords: 'G D | Em C' },
 ] });
@@ -3279,8 +3296,12 @@ const barsOf = sec => { const n = sec.beats * gOf(sec); return Array.from({ leng
 const refitSec = (sec, beats, sub, pbars, grid, den) => {
   const old = barsOf(sec), out = [], og = gOf(sec), g = grid ?? nextGrid(sec.sub, og, sub);
   for (let b = 0; b < pbars; b++) { const src = old[b] || old[old.length - 1]; out.push(...fitStrum(src, og, beats, g)); }
+  const n0 = sec.beats * og, pAll = Array.isArray(sec.pluck) ? sec.pluck : [];
+  const oldP = Array.from({ length: Math.max(1, sec.patternBars || 1) }, (_, b) => pAll.slice(b * n0, (b + 1) * n0));
+  const pout = [];
+  for (let b = 0; b < pbars; b++) pout.push(...fitPluck(oldP[b] || oldP[oldP.length - 1], og, beats, g));
   const d = den != null ? den : ([2, 4, 8, 16].includes(+sec.den) ? +sec.den : 4);
-  return { ...sec, beats, den: d, sub, grid: g, patternBars: pbars, strum: out, accents: fitAccents(sec.accents || [], beats) };
+  return { ...sec, beats, den: d, sub, grid: g, patternBars: pbars, strum: out, pluck: pout, accents: fitAccents(sec.accents || [], beats) };
 };
 const glyphOf = v => v === 'D' ? '↓' : v === 'U' ? '↑' : '–';
 const fmtLen = secs => Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
@@ -3540,9 +3561,11 @@ const fixSec = x => {
   const den = [2, 4, 8, 16].includes(+x.den) ? +x.den : 4;
   const rawAcc = Array.isArray(x.accents) ? x.accents : [];
   const accents = fitAccents(rawAcc.slice(0, beats).map(a => ACC_OK[a] ? a : 'normal'), beats);
+  const pk = Array.isArray(x.pluck) ? x.pluck : [];
   return { ...x, id: String(x.id || 's' + Math.random().toString(36).slice(2, 9)), name: String(x.name ?? ''), beats, den, sub, grid, patternBars: pb, repeat: clampI(x.repeat, 1, 64, 1),
     accents,
     strum: Array.from({ length: beats * grid * pb }, (_, k) => st[k] === 'D' || st[k] === 'U' ? st[k] : ''),
+    pluck: Array.from({ length: beats * grid * pb }, (_, k) => PLUCK_OK[pk[k]] ? pk[k] : ''),
     chords: typeof x.chords === 'string' ? x.chords : '', lyrics: typeof x.lyrics === 'string' ? x.lyrics : '', bpl: clampI(x.bpl, 1, 8, 2) };
 };
 const fixSong = x => {
@@ -3613,6 +3636,8 @@ Object.assign(ZH, { 'First': '第一拍', 'first': '第一拍', '1': '1', 'The 1
 Object.assign(TK, { sound3: 'The 1, an accent, and a normal beat each have their own sound.', drumCredit: 'Recorded drums in this list: FluidR3 GM, CC BY 3.0.' });
 Object.assign(ZH, { 'Play': '播放', 'Stop': '停止', 'Guitar': '吉他', 'Tick a section to practice it. Leave them all off to play the whole song.': '勾选段落来练习。全部不勾就是播放整首歌。', 'Practice: ': '练习：', 'Practice ': '练习 ', 'Stop practicing ': '取消练习 ' });
 Object.assign(TK, { play: 'Play', stop: 'Stop', guitarShort: 'Guitar', pracHint: 'Tick a section to practice it. Leave them all off to play the whole song.' });
+Object.assign(TK, { pluck: 'Pluck', pluckHint: 'Pluck · tap a number to pick one string. 6E is the thick string, 1e is the thin string. A number is one string. An arrow still strums the whole chord.' });
+Object.assign(ZH, { 'Pluck': '拨弦', 'Pluck · tap a number to pick one string. 6E is the thick string, 1e is the thin string. A number is one string. An arrow still strums the whole chord.': '拨弦 · 点数字选一根弦。6E 是粗弦，1e 是细弦。数字是拨一根弦。箭头仍是扫整和弦。' });
 const marking = b => b < 60 ? 'Largo' : b < 76 ? 'Adagio' : b < 108 ? 'Andante' : b < 120 ? 'Moderato' : b < 168 ? 'Allegro' : 'Presto';
 
 class Component extends DCLogic {
@@ -3643,7 +3668,7 @@ class Component extends DCLogic {
     this.state = {
       bpm: cur.bpm ?? 120, beats: cur.beats ?? 4, den: cur.den ?? 4, sub: cur.sub ?? 1, grid: cur.grid ?? cur.sub ?? 1,
       accents: cur.accents ?? ['one', 'normal', 'normal', 'normal'], strum: cur.strum ?? fitStrum(null, 1, cur.beats ?? 4, cur.grid ?? cur.sub ?? 1), presetId: cur.presetId ?? null,
-      playing: false, active: -1, dark: st.dark ?? false, songLoop: st.songLoop ?? false, guitar: st.guitar ?? false, color: OLD_COLOR[st.color] || st.color || 'Teal', lang: st.lang ?? ((navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en'), sound: st.sound ?? 'Click', flashOn: st.flashOn ?? true, show: { ...ALL_ON, ...(st.show || {}) }, pulse: null, screen: 'metronome', songs: sg.songs, songId: sg.songId, secSel: -1, prac: {}, pracPlay: null, songPos: -1, mode: null, presets, dialog: false, draftName: '', toast: '', kd: null, imp: null, kSave: false, setlist: sg.setlist || [], sets: sg.sets, setId: sg.setId, bin: Array.isArray(sg.bin) ? sg.bin.filter(b => b && b.item && ['song', 'preset', 'set'].includes(b.type) && Date.now() - (b.at || 0) < 30 * 864e5) : [], binOpen: false, libOpen: { set: st.libOpen?.set !== false, song: st.libOpen?.song !== false, beat: st.libOpen?.beat !== false }, trainer: { on: false, step: 2, every: 4, target: 140, ...(st.trainer || {}) }, lyrScale: st.lyrScale ?? 1, lastBackup: st.lastBackup ?? null, firstUse: st.firstUse, bkSnooze: st.bkSnooze ?? 0, libQ: '', libSort: 'recent', undo: null,
+      playing: false, active: -1, dark: st.dark ?? false, songLoop: st.songLoop ?? false, guitar: st.guitar ?? false, pluck: st.pluck ?? false, color: OLD_COLOR[st.color] || st.color || 'Teal', lang: st.lang ?? ((navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en'), sound: st.sound ?? 'Click', flashOn: st.flashOn ?? true, show: { ...ALL_ON, ...(st.show || {}) }, pulse: null, screen: 'metronome', songs: sg.songs, songId: sg.songId, secSel: -1, prac: {}, pracPlay: null, songPos: -1, mode: null, presets, dialog: false, draftName: '', toast: '', kd: null, imp: null, kSave: false, setlist: sg.setlist || [], sets: sg.sets, setId: sg.setId, bin: Array.isArray(sg.bin) ? sg.bin.filter(b => b && b.item && ['song', 'preset', 'set'].includes(b.type) && Date.now() - (b.at || 0) < 30 * 864e5) : [], binOpen: false, libOpen: { set: st.libOpen?.set !== false, song: st.libOpen?.song !== false, beat: st.libOpen?.beat !== false }, trainer: { on: false, step: 2, every: 4, target: 140, ...(st.trainer || {}) }, lyrScale: st.lyrScale ?? 1, lastBackup: st.lastBackup ?? null, firstUse: st.firstUse, bkSnooze: st.bkSnooze ?? 0, libQ: '', libSort: 'recent', undo: null,
     };
     this.taps = [];
     this.lyrRef = el => { this.lyrEl = el; };
@@ -3651,8 +3676,8 @@ class Component extends DCLogic {
   componentDidUpdate() {
     const s = this.state, prev = this._prevState || {};
     this._prevState = s;
-    if (['dark', 'sound', 'flashOn', 'show', 'lang', 'songLoop', 'guitar', 'color', 'trainer', 'lyrScale', 'lastBackup', 'bkSnooze', 'libOpen'].some(k => prev[k] !== s[k]))
-      lsSet(SET, JSON.stringify({ color: s.color, songLoop: s.songLoop, guitar: s.guitar, lang: s.lang, dark: s.dark, sound: s.sound, flashOn: s.flashOn, show: s.show, trainer: s.trainer, lyrScale: s.lyrScale, lastBackup: s.lastBackup, firstUse: s.firstUse, bkSnooze: s.bkSnooze, libOpen: s.libOpen, acc3: true }));
+    if (['dark', 'sound', 'flashOn', 'show', 'lang', 'songLoop', 'guitar', 'pluck', 'color', 'trainer', 'lyrScale', 'lastBackup', 'bkSnooze', 'libOpen'].some(k => prev[k] !== s[k]))
+      lsSet(SET, JSON.stringify({ color: s.color, songLoop: s.songLoop, guitar: s.guitar, pluck: s.pluck, lang: s.lang, dark: s.dark, sound: s.sound, flashOn: s.flashOn, show: s.show, trainer: s.trainer, lyrScale: s.lyrScale, lastBackup: s.lastBackup, firstUse: s.firstUse, bkSnooze: s.bkSnooze, libOpen: s.libOpen, acc3: true }));
     if (prev.songs !== s.songs || prev.songId !== s.songId || prev.setlist !== s.setlist || prev.sets !== s.sets || prev.setId !== s.setId || prev.bin !== s.bin) lsSet(SONGS, JSON.stringify({ songs: s.songs, songId: s.songId, sets: this.allSets(s), setId: s.setId, bin: s.bin }));
     if (prev.presets !== s.presets) lsSet(KEY, JSON.stringify(s.presets));
     if (['bpm', 'beats', 'den', 'sub', 'grid', 'accents', 'strum', 'presetId'].some(k => prev[k] !== s[k]))
@@ -3788,8 +3813,10 @@ class Component extends DCLogic {
           const ch = chordAt(toks, b, sec.beats); if (ch) last = ch;
           const ak = accs[b] || 'normal';
           for (let j = 0; j < g; j++) {
-            const stroke = (sec.strum && sec.strum[pb * sec.beats * g + b * g + j]) || '';
-            ev.push({ sec: si, bar, pb, beat: b, j, sub: g, chord: last, stroke, click: ak !== 'mute' && (j * sec.sub) % g === 0, kind: playKind(ak, b, j) });
+            const idx = pb * sec.beats * g + b * g + j;
+            const stroke = (sec.strum && sec.strum[idx]) || '';
+            const pluck = (sec.pluck && sec.pluck[idx]) || '';
+            ev.push({ sec: si, bar, pb, beat: b, j, sub: g, chord: last, stroke, pluck, click: ak !== 'mute' && (j * sec.sub) % g === 0, kind: playKind(ak, b, j) });
           }
         }
       }
@@ -3874,7 +3901,10 @@ class Component extends DCLogic {
       if (!late) {
         if (this.state.guitar) {
           if (e.ci) { if (e.click !== false) this.chuck(this.next, e.kind === 'one' ? 0.55 : e.kind === 'accent' ? 0.42 : 0.24, 'D'); }
-          else if (e.stroke === 'D' || e.stroke === 'U') this.strumGuitar(this.next, e.chord, e.stroke);
+          else {
+            if (e.stroke === 'D' || e.stroke === 'U') this.strumGuitar(this.next, e.chord, e.stroke);
+            if (this.state.pluck && PLUCK_OK[e.pluck]) this.pluckString(this.next, e.chord, e.pluck);
+          }
         } else if (e.click !== false) this.click(this.next, e.kind);
       }
       if (!late) this.queueVis(this.next, { songPos: idx });
@@ -3891,6 +3921,14 @@ class Component extends DCLogic {
   updSong(fn) { const id = this.curSong().id; this.setState(s => ({ songs: s.songs.map(x => x.id === id ? fn(x) : x) })); }
   updSec(i, fn) { this.updSong(song => ({ ...song, sections: song.sections.map((x, j) => j === i ? fn(x) : x) })); }
   cycleSecStrum(i, k) { this.updSec(i, x => ({ ...x, strum: x.strum.map((v, n) => n === k ? STRUM_NEXT[v || ''] : v) })); }
+  cycleSecPluck(i, k) {
+    this.updSec(i, x => {
+      const n = x.beats * gOf(x) * x.patternBars;
+      const p = Array.from({ length: n }, (_, j) => PLUCK_OK[x.pluck && x.pluck[j]] ? x.pluck[j] : '');
+      p[k] = PLUCK_NEXT[p[k] || ''] || '';
+      return { ...x, pluck: p };
+    });
+  }
   cycleSecAccent(i, b) {
     this.updSec(i, x => ({ ...x, accents: fitAccents(x.accents, x.beats).map((a, j) => j === b ? (ACC_NEXT[a] || 'normal') : a) }));
   }
@@ -3907,7 +3945,12 @@ class Component extends DCLogic {
     const playing = this.state.playing && this.state.mode === 'song';
     this.updSong(song => ({
       ...song,
-      sections: song.sections.map((x, j) => j === i ? { ...x, beats, den, sub, grid, accents: accents.slice(), strum: Array.from({ length: x.patternBars }, () => one).flat() } : x),
+      sections: song.sections.map((x, j) => {
+        if (j !== i) return x;
+        const oldG = gOf(x), psrc = Array.isArray(x.pluck) ? x.pluck : [];
+        const pluck = Array.from({ length: x.patternBars }, (_, b) => fitPluck(psrc.slice(b * x.beats * oldG, (b + 1) * x.beats * oldG), oldG, beats, grid)).flat();
+        return { ...x, beats, den, sub, grid, accents: accents.slice(), strum: Array.from({ length: x.patternBars }, () => one).flat(), pluck };
+      }),
     }));
     const nm = src.name || this.L('This metronome');
     this.flash(this.L('Using “') + nm + '”' + (playing ? this.L(' · plays on the next start') : ''));
@@ -3973,12 +4016,22 @@ class Component extends DCLogic {
       this.pluck(time + i * gap, 440 * Math.pow(2, (midi - 69) / 12), vel, false);
     });
   }
+  pluckString(time, chord, which) {
+    const open = { '6': 40, '5': 45, '4': 50, '3': 55, '2': 59, '1': 64 };
+    const midis = chordMidis(this.soundingChord(chord));
+    let midi = open[which];
+    if (midis && midis.length) {
+      const i = { '6': 0, '5': 1, '4': 2, '3': 3, '2': 4, '1': 5 }[which] || 0;
+      midi = midis.length >= 6 ? midis[i] : midis[Math.round(i * (midis.length - 1) / 5)];
+    }
+    this.pluck(time, 440 * Math.pow(2, (midi - 69) / 12), 0.5, false);
+  }
   moveSec(i, d) {
     this.updSong(song => { const a = song.sections.slice(), j = i + d; if (j < 0 || j >= a.length) return song; [a[i], a[j]] = [a[j], a[i]]; return { ...song, sections: a }; });
     this.setState({ secSel: i + d });
   }
   dupSec(i) {
-    this.updSong(song => { const a = song.sections.slice(); a.splice(i + 1, 0, { ...a[i], strum: a[i].strum.slice(), accents: (a[i].accents || []).slice(), id: 's' + Date.now(), name: a[i].name + this.L(' copy') }); return { ...song, sections: a }; });
+    this.updSong(song => { const a = song.sections.slice(); a.splice(i + 1, 0, { ...a[i], strum: a[i].strum.slice(), pluck: (a[i].pluck || []).slice(), accents: (a[i].accents || []).slice(), id: 's' + Date.now(), name: a[i].name + this.L(' copy') }); return { ...song, sections: a }; });
     this.setState({ secSel: i + 1 });
   }
   delSec(i) {
@@ -4424,13 +4477,20 @@ class Component extends DCLogic {
         const ak = accs[b] || 'normal';
         return {
           cells: [String(b + 1)].concat(SUB_LABELS[gOf(sec)] || []).map((count, j) => {
-            const g = gOf(sec), k = pb * sec.beats * g + b * g + j, v = sec.strum[k] || '';
+            const g = gOf(sec), k = pb * sec.beats * g + b * g + j, v = sec.strum[k] || '', p = (sec.pluck && sec.pluck[k]) || '';
             const lit = s.flashOn && !!ev && !ev.ci && ev.sec === si && ev.pb === pb && ev.beat === b && ev.j === j;
             const look = cellLook(lit, v);
             if (!lit && j === 0 && ak === 'one') look.bd = ink;
             if (!lit && j === 0 && ak === 'accent') look.bd = acc;
             if (!lit && ak === 'mute') look.fg = 'var(--muted)';
-            return { count, glyph: glyphOf(v), aria: count + ': ' + (v === 'D' ? 'down' : v === 'U' ? 'up' : 'rest'), ...look, cycle: editable ? () => this.cycleSecStrum(si, k) : null };
+            const pOn = !!PLUCK_OK[p];
+            const pLook = pOn
+              ? { pBg: lit ? 'var(--flash)' : ink, pFg: lit ? 'var(--flash-ink)' : 'var(--color-bg)', pBd: lit ? 'var(--flash)' : ink }
+              : (lit ? { pBg: 'var(--flash)', pFg: 'var(--flash-ink)', pBd: 'var(--flash)' } : { pBg: 'transparent', pFg: 'var(--muted)', pBd: 'var(--color-divider)' });
+            return { count, glyph: glyphOf(v), aria: count + ': ' + (v === 'D' ? 'down' : v === 'U' ? 'up' : 'rest'), ...look,
+              pNum: pOn ? p : '·', pName: pOn ? PLUCK_NAME[p] : '', pMark: pOn ? p + PLUCK_NAME[p] : '', showP: !!(s.pluck && pOn),
+              pAria: 'Pluck ' + count + ': ' + (pOn ? 'string ' + p + ' ' + PLUCK_NAME[p] : 'none'), ...pLook,
+              cycle: editable ? () => this.cycleSecStrum(si, k) : null, pCycle: editable ? () => this.cycleSecPluck(si, k) : null };
           }),
         };
       });
@@ -4476,10 +4536,12 @@ class Component extends DCLogic {
       const first = barsOf(sec)[0] || [];
       const sg = gOf(sec);
       const preview = Array.from({ length: sec.beats }, (_, b) => first.slice(b * sg, (b + 1) * sg).map(v => v === 'D' ? '↓' : v === 'U' ? '↑' : '·').join('')).join(' ') + (sec.patternBars > 1 ? '  +' + (sec.patternBars - 1) : '');
+      const pFirst = (sec.pluck || []).slice(0, sec.beats * sg);
+      const pluckPrev = (s.pluck && pFirst.some(Boolean)) ? Array.from({ length: sec.beats }, (_, b) => pFirst.slice(b * sg, (b + 1) * sg).map(v => PLUCK_OK[v] ? v + PLUCK_NAME[v] : '·').join('')).join(' ') + (sec.patternBars > 1 ? '  +' : '') : '';
       return {
         num: String(i + 1).padStart(2, '0'), name: sec.name, total,
         meta: sec.beats + '/' + (sec.den || 4) + ' · ' + subL + (sg !== sec.sub ? ' · ' + L('Strum') + ' ' + subLab(sg) : '') + ' · ' + (sec.patternBars > 1 ? sec.patternBars + L('-bar pattern × ') : '× ') + sec.repeat,
-        preview, selected: sel,
+        preview, pluckPrev, selected: sel,
         ...(() => {
           const cb = parseChords(sec.chords), bpl = sec.bpl || 2, nl = lyrLines(sec.lyrics).length;
           return { hasChords: cb.length > 0, chordLine: cb.map(t => t.map(x => x === '.' ? '·' : dch(x)).join(' ') || '–').join(' | '), chords: sec.chords || '',
@@ -4582,6 +4644,8 @@ class Component extends DCLogic {
       songLoop: !!s.songLoop, toggleSongLoop: () => this.setState({ songLoop: !s.songLoop }),
       guitarOn: !!s.guitar, guitarSw: sw(!!s.guitar), toggleGuitar: () => { const on = !s.guitar; this.setState({ guitar: on }); if (on) this.loadGuitar(); },
       gBg: s.guitar ? acc : 'transparent', gFg: s.guitar ? 'var(--acc-ink)' : ink, gBd: s.guitar ? acc : 'var(--color-divider)',
+      pluckOn: !!s.pluck, togglePluck: () => { const on = !s.pluck; this.setState({ pluck: on }); if (on) this.loadGuitar(); },
+      pBg: s.pluck ? ink : 'transparent', pFg: s.pluck ? 'var(--color-bg)' : ink, pBd: s.pluck ? ink : 'var(--color-divider)',
       loopBg: s.songLoop ? ink : 'transparent', loopFg: s.songLoop ? 'var(--color-bg)' : ink, loopBd: s.songLoop ? ink : 'var(--color-divider)',
       loopNote: s.solo != null ? L('Loop') + ' · ' + (secs[s.solo] ? secs[s.solo].name : '') : ((songOn && s.pracPlay && s.pracPlay.length) ? ((s.songLoop ? L('Loop') + ' · ' : '') + s.pracPlay.map(i => secs[i] && secs[i].name).filter(Boolean).join(' → ')) : L(s.songLoop ? 'Looping song' : 'Plays once')),
       npCellH: compact ? '76px' : '132px', npGlyph: (() => { const sc = ev && !ev.ci ? secs[ev.sec] : null; return (compact ? { 1: '40px', 2: '32px', 3: '26px', 4: '20px' } : { 1: '64px', 2: '46px', 3: '34px', 4: '26px' })[sc ? gOf(sc) : 1]; })(),
